@@ -31,12 +31,14 @@ export default function LandingPage({ onLogin }: { onLogin: () => void }) {
           </div>
           <span className="text-xl font-black tracking-tighter text-white uppercase">Apex</span>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
           <a href="https://create.roblox.com/docs" target="_blank" rel="noopener noreferrer" className="hidden md:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors cursor-pointer">Docs</a>
+          <Link to="/privacy-policy" className="hidden lg:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Privacy</Link>
+          <Link to="/terms-of-service" className="hidden lg:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Terms</Link>
           <button onClick={onLogin} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Sign In</button>
           <button 
             onClick={onLogin}
-            className="px-6 py-2.5 bg-white text-black hover:bg-gray-200 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+            className="hidden sm:block px-6 py-2.5 bg-white text-black hover:bg-gray-200 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
           >
             Open Studio
           </button>
