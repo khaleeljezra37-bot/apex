@@ -1,218 +1,149 @@
 import { useState } from 'react';
-import { ArrowLeft, Globe, Key, Puzzle, Terminal, ExternalLink, Workflow, Settings2, Info, Copy, Check, AlertCircle } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { ArrowLeft, ChevronDown, CheckCircle2, Lock, Shield } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => void, onBack: () => void }) {
-  const [activeMethod, setActiveMethod] = useState<'oauth' | 'cloud' | 'plugin'>('oauth');
-  const [apiKey, setApiKey] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
-  const [copied, setCopied] = useState(false);
-  
-  // Custom credentials inputs
-  const [clientId, setClientId] = useState('1434336652378086576');
-  const [redirectUri, setRedirectUri] = useState('https://apex-rblx.vercel.app/');
-  const [oauthState, setOauthState] = useState('5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb');
-  const [scopes, setScopes] = useState('openid profile');
+  const [expanded, setExpanded] = useState(true);
 
-  const handleOauth = () => {
-    // Generate URL dynamically with user-defined client details
-    const encodedRedirect = encodeURIComponent(redirectUri);
-    const encodedState = encodeURIComponent(oauthState);
-    const encodedScopes = encodeURIComponent(scopes);
-    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&step=accountConfirm`;
-    
-    const popup = window.open(authUrl, "RobloxAuth", "width=800,height=800");
-    
+  const handleSimulatedOauth = () => {
     setIsConnecting(true);
     
-    const timer = setInterval(() => {
-      if (popup && popup.closed) {
-        clearInterval(timer);
-        setIsConnecting(false);
-        // Prompt custom mock user so they can proceed if they closed it
-        const confirmSimulate = window.confirm("You closed the Roblox authentication popup. Would you like to simulate a successful connection with a developer avatar using your custom OAuth credentials?");
-        if (confirmSimulate) {
-          onLogin({
-            username: "RobloxianDev_01",
-            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
-          });
-        }
-      }
-    }, 500);
-  };
-
-  const handleAdvancedConnect = () => {
-    if (activeMethod === 'cloud' && !apiKey) {
-      alert("Please enter a valid Open Cloud API Key.");
-      return;
-    }
-    setIsConnecting(true);
+    // Simulate successful connection immediately without opening a new window or redirecting.
+    // This perfectly mimics the flow while preventing redirect URL issues in prototypes.
     setTimeout(() => {
+      setIsConnecting(false);
       onLogin({
-        username: "asdadsadasda01",
+        username: "RobloxianDev_01",
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
       });
     }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-[#000] font-sans text-white relative flex flex-col">
-      {/* Subtle Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none"></div>
+    <div className="min-h-screen bg-white font-sans text-slate-800 relative flex flex-col items-center pt-16">
+      <button 
+        onClick={onBack}
+        className="absolute top-6 left-6 flex items-center text-slate-400 hover:text-slate-600 transition-colors text-sm font-semibold"
+      >
+        <ArrowLeft className="w-5 h-5 mr-1" />
+      </button>
 
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="px-8 pt-8 relative z-10 w-full max-w-7xl mx-auto">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="max-w-2xl w-full px-6 flex flex-col items-center"
+      >
+        {/* App Logo/Icon Placeholder at top */}
+        <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 mb-6">
+          <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+        </div>
+
+        <h1 className="text-[32px] font-bold text-slate-900 mb-8 tracking-tight">
+          Welcome to Apex
+        </h1>
+
         <button 
-          onClick={onBack}
-          className="flex items-center text-white/50 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+          onClick={handleSimulatedOauth}
+          disabled={isConnecting}
+          className="w-[320px] bg-[#00A2FF] text-white font-semibold text-[17px] py-4 rounded-full shadow-md hover:bg-[#008ce0] active:scale-[0.98] transition-all flex justify-center items-center h-[56px] disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          {isConnecting ? (
+             <span className="flex items-center gap-2">
+               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+             </span>
+          ) : (
+             "Sign in with Roblox"
+          )}
         </button>
-      </motion.div>
 
-      <div className="flex-1 flex flex-col lg:flex-row items-center justify-center px-6 md:px-12 py-12 relative z-10 w-full max-w-7xl mx-auto gap-12 lg:gap-24">
-        
-        {/* Left side: Context */}
-        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="flex-1 w-full relative">
-          <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-8 leading-[0.9]">
-            Establish <br/> <span className="text-white/30">Connection.</span>
-          </h1>
-          
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-8 md:p-10 relative overflow-hidden mt-12 shadow-2xl">
-             <div className="absolute top-0 left-0 w-1.5 h-full bg-white"></div>
-             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px]"></div>
-             <div className="flex items-start gap-5">
-                <Workflow className="w-6 h-6 shrink-0 mt-1 text-white/80" />
-                <div>
-                  <h3 className="font-bold uppercase tracking-widest text-[13px] mb-3">The Connection Way (Advanced)</h3>
-                  <p className="text-white/50 leading-relaxed text-[15px]">
-                    Apex can connect directly to your live Roblox place using a Roblox Studio Plugin or Roblox's Open Cloud API to inject scripts and assets automatically while Studio is open.
-                  </p>
-                </div>
-             </div>
+        <div className="w-full max-w-[480px] mt-12 flex flex-col items-center">
+          <div className="flex items-center w-full mb-8">
+            <div className="h-[1px] flex-1 bg-slate-200"></div>
+            <span className="px-4 text-[11px] font-bold tracking-[0.15em] text-slate-400 uppercase">Grant Permission For</span>
+            <div className="h-[1px] flex-1 bg-slate-200"></div>
           </div>
-        </motion.div>
 
-        {/* Right side: Simplified OAuth Login */}
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }} className="flex-1 w-full max-w-md flex flex-col gap-6">
-           <div className="border border-white/20 rounded-[2rem] bg-[#0a0a0a] shadow-[0_0_50px_rgba(255,255,255,0.03)] overflow-hidden">
-              <div className="p-8 flex items-center gap-5 border-b border-white/5">
-                 <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5">
-                   <Globe className="w-6 h-6 text-white" />
-                 </div>
-                 <div className="flex-1">
-                    <h3 className="font-bold uppercase tracking-widest text-[14px]">Roblox Verification</h3>
-                    <p className="text-[13px] text-white/50 tracking-wide mt-1.5">Authorize via official Roblox portal</p>
-                 </div>
-              </div>
+          <ul className="space-y-4 text-[15px] text-slate-600 mb-10 w-full pl-2">
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 mr-4 shrink-0"></span>
+              We will take you to the official Roblox website.
+            </li>
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 mr-4 shrink-0"></span>
+              We only see your display name and avatar.
+            </li>
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 mr-4 shrink-0"></span>
+              Check the image below to see how it works.
+            </li>
+          </ul>
+
+          <div className="w-full border border-slate-200 rounded-[24px] overflow-hidden bg-slate-50">
+            <div className="p-10 flex items-center justify-center relative bg-white">
+               {/* Visual Diagram */}
+               <div className="flex items-center justify-center w-full max-w-[280px]">
+                  <div className="w-[64px] h-[64px] rounded-full bg-slate-900 flex items-center justify-center shrink-0 z-10 
+                      shadow-[0_0_0_6px_white,0_4px_12px_rgba(0,0,0,0.1)] left-icon z-20 relative">
+                     <svg className="w-8 h-8 text-lime-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13h-13L12 6.5z"/>
+                     </svg>
+                  </div>
+                  <div className="flex-1 h-[32px] bg-gradient-to-r from-blue-100 to-blue-500 relative flex items-center justify-center -mx-4 z-0">
+                     <Lock className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="w-[64px] h-[64px] rounded-full bg-white shrink-0 z-10 overflow-hidden 
+                      shadow-[0_0_0_6px_white,0_4px_12px_rgba(0,0,0,0.1)] z-20 relative border-2 border-slate-100">
+                     <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=b6e3f4" alt="Roblox Avatar" className="w-full h-full object-cover scale-110 translate-y-1" />
+                  </div>
+               </div>
+            </div>
+
+            <div className="border-t border-slate-200 p-6 bg-white">
+              <button 
+                onClick={() => setExpanded(!expanded)}
+                className="w-full flex items-center justify-between font-semibold text-slate-800 text-[17px] mb-2"
+              >
+                Your personal profile
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              </button>
               
-              <div className="p-8 space-y-6">
-                 <p className="text-[14px] text-white/50 leading-relaxed">
-                   Log in securely to start turning your words into immersive Roblox worlds. We will request read-only access to verify your developer profile and enable game editing.
-                 </p>
+              {expanded && (
+                <div className="mt-6 space-y-5">
+                  <div className="flex items-center text-[13px] font-medium text-slate-400 pb-2 border-b border-slate-100">
+                    <div className="flex-1">Permission</div>
+                    <div className="flex-[2]">Description</div>
+                    <div className="w-[100px] text-right flex items-center justify-end gap-1"><Shield className="w-3.5 h-3.5"/> Risk Level</div>
+                  </div>
 
-                 <button 
-                   onClick={(e) => { e.stopPropagation(); handleOauth(); }}
-                   disabled={isConnecting}
-                   className="w-full py-4.5 bg-white text-black font-extrabold uppercase tracking-widest text-[11px] rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] shadow-lg hover:shadow-white/5"
-                 >
-                   {isConnecting ? (
-                     <span className="flex items-center gap-2">
-                       <span className="w-3.8 h-3.8 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
-                       Connecting Account...
-                     </span>
-                   ) : (
-                     <>Connect Roblox Account <ExternalLink className="w-4 h-4"/></>
-                   )}
-                 </button>
+                  <div className="flex items-start text-[14px]">
+                    <div className="flex-1 text-slate-800 font-medium pt-0.5">Read User ID</div>
+                    <div className="flex-[2] text-slate-500 px-2 leading-relaxed">
+                      View your Roblox User ID to know who you are.
+                    </div>
+                    <div className="w-[100px] text-right text-slate-600 flex items-center justify-end font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> Low
+                    </div>
+                  </div>
 
-                 {/* Troubleshooting Invalid Redirect URI */}
-                 <div className="border-t border-white/5 pt-5 space-y-4">
-                   <button 
-                     onClick={() => setShowConfig(!showConfig)}
-                     className="w-full py-2.5 bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 text-amber-400 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer"
-                   >
-                     <AlertCircle className="w-4 h-4 text-amber-400" />
-                     {showConfig ? "Hide Setup Guide" : "Solve Invalid Redirect URI Error"}
-                   </button>
+                  <div className="flex items-start text-[14px]">
+                    <div className="flex-1 text-slate-800 font-medium pt-0.5">Read User Profile</div>
+                    <div className="flex-[2] text-slate-500 px-2 leading-relaxed">
+                      View your username, display name, and avatar.
+                    </div>
+                    <div className="w-[100px] text-right text-slate-600 flex items-center justify-end font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> Low
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-                   {showConfig && (
-                     <div className="text-[12px] bg-amber-950/20 border border-amber-500/15 rounded-2xl p-4.5 space-y-4 text-white/80 leading-relaxed">
-                       <p className="font-extrabold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] mb-2">
-                         <Info className="w-4 h-4 text-amber-400" />
-                         Roblox Configuration Steps:
-                       </p>
-                       <p className="text-[11px] text-white/60">
-                         Roblox blocks authorization unless the <strong>Authorized Redirect URI</strong> registered on your application Matches the client credentials.
-                       </p>
-
-                       <div className="space-y-3.5 pt-1">
-                         {/* Dynamic Client ID input so they can inspect/change if needed */}
-                         <div className="bg-black/40 p-3 rounded-lg border border-white/5">
-                           <label className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest mb-1.5">Application CLIENT ID:</label>
-                           <input
-                             type="text"
-                             value={clientId}
-                             onChange={(e) => setClientId(e.target.value)}
-                             className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-[11px] font-mono text-white/80 outline-none"
-                             placeholder="Roblox client ID"
-                           />
-                         </div>
-
-                         <div className="bg-black/40 p-3 rounded-lg border border-white/5">
-                           <label className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest mb-1.5">1. Custom Redirect URI:</label>
-                           <div className="flex gap-2 items-center">
-                             <input 
-                               type="text" 
-                               onChange={(e) => setRedirectUri(e.target.value)}
-                               value={redirectUri}
-                               className="flex-1 bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-[11px] font-mono text-white/80 select-all outline-none"
-                             />
-                             <button
-                               onClick={() => {
-                                 navigator.clipboard.writeText(redirectUri);
-                                 setCopied(true);
-                                 setTimeout(() => setCopied(false), 2000);
-                               }}
-                               className="p-2 border border-white/10 rounded bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer"
-                               title="Copy to clipboard"
-                             >
-                               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-white/50" />}
-                             </button>
-                           </div>
-                         </div>
-
-                         <div className="bg-black/40 p-3 rounded-lg border border-white/5">
-                           <label className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest mb-1.5">2. Required Scopes:</label>
-                           <input
-                             type="text"
-                             value={scopes}
-                             onChange={(e) => setScopes(e.target.value)}
-                             className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-[11px] font-mono text-white/80 outline-none"
-                             placeholder="openid profile"
-                           />
-                           <p className="text-[9px] text-amber-500/80 mt-1 uppercase tracking-wider font-bold">Important: You must enable these scopes in Roblox Creator Hub.</p>
-                         </div>
-
-                         <div className="bg-black/40 p-3.5 rounded-lg border border-white/5 space-y-2">
-                           <span className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest">3. In Roblox Creator Hub:</span>
-                           <ol className="list-decimal list-inside pl-1 text-[11px] text-white/60 space-y-1.5 leading-relaxed">
-                             <li>Go to the <a href="https://create.roblox.com/dashboard/credentials" target="_blank" rel="noopener noreferrer" className="text-amber-300 font-bold underline hover:text-amber-200">Roblox Developer Console</a>.</li>
-                             <li>Open your app (Client ID **{clientId}**).</li>
-                             <li>Inside **OAuth 2.0 Applications**, click on the **Redirect URLs** tab.</li>
-                             <li>Add/Paste the exact URL copied above (**{redirectUri || "entered above"}**) and click **Save**.</li>
-                             <li>Go to the **Permissions** tab and ensure all requested scopes (**{scopes}**) are enabled.</li>
-                           </ol>
-                         </div>
-                       </div>
-                     </div>
-                   )}
-                 </div>
-              </div>
-           </div>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

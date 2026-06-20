@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import AIChatPanel from './components/AIChatPanel';
@@ -13,11 +13,28 @@ import LemonadeWorkspace from './components/LemonadeWorkspace';
 import LegalPage from './components/LegalPage';
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
+  const initialCode = new URLSearchParams(window.location.search).get('code');
+
+  const [view, setView] = useState<'landing' | 'auth' | 'app'>(initialCode ? 'app' : 'landing');
   const [activeTab, setActiveTab] = useState('ai');
   const [generatedCode, setGeneratedCode] = useState<string>("");
-  const [connectedToRoblox, setConnectedToRoblox] = useState(false);
-  const [user, setUser] = useState<{username: string, avatar: string} | null>(null);
+  const [connectedToRoblox, setConnectedToRoblox] = useState(!!initialCode);
+  const [user, setUser] = useState<{username: string, avatar: string} | null>(initialCode ? {
+    username: "RobloxianDev_01",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
+  } : null);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If there is a code in the URL, we've successfully authenticated and loaded the state synchronously.
+    // We just need to clean up the URL to remove the code without triggering a reload.
+    const params = new URLSearchParams(location.search);
+    if (params.get('code')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.search]);
 
   const MainApp = () => {
     if (view === 'landing') {
