@@ -6,7 +6,7 @@ import ConnectionModal from "./ConnectionModal";
 interface HeaderProps {
   connected: boolean;
   setConnected: (state: boolean) => void;
-  user?: { username: string, avatar: string } | null;
+  user?: { username: string, nickname?: string, avatar: string } | null;
 }
 
 export default function Header({ connected, setConnected, user }: HeaderProps) {
@@ -67,10 +67,13 @@ export default function Header({ connected, setConnected, user }: HeaderProps) {
               </div>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[13px] font-bold text-white tracking-wider max-w-[120px] truncate">
-                  {user?.username || 'Developer'}
+                  {user?.nickname || user?.username || 'Apex Developer'}
                 </span>
-                <span className="text-[10px] text-white/70 mt-1 font-bold tracking-widest uppercase flex items-center">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white mr-1.5 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
+                <span className="text-[10px] text-white/40 font-mono mt-0.5">
+                  @{user?.username || 'RobloxianDev_01'}
+                </span>
+                <span className="text-[9px] text-emerald-400 mt-1 font-bold tracking-widest uppercase flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
                   Connected
                 </span>
               </div>

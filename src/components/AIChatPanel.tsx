@@ -20,10 +20,17 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
 
     setLoading(true);
     try {
+      const customOpenAiKey = localStorage.getItem("apex_openai_key") || "";
+      const customGeminiKey = localStorage.getItem("apex_gemini_key") || "";
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, aiModel: provider }),
+        body: JSON.stringify({ 
+          prompt, 
+          aiModel: provider, 
+          customOpenAiKey, 
+          customGeminiKey 
+        }),
       });
 
       const data = await res.json();

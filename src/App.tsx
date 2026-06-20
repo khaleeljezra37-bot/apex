@@ -10,6 +10,7 @@ import AuthPage from './components/AuthPage';
 import WorkspaceTab from './components/WorkspaceTab';
 import AssetLibraryTab from './components/AssetLibraryTab';
 import ApexWorkspace from './components/ApexWorkspace';
+import SettingsTab from './components/SettingsTab';
 import LegalPage from './components/LegalPage';
 
 const DashboardLayout = ({ 
@@ -19,7 +20,8 @@ const DashboardLayout = ({
   connectedToRoblox, 
   setConnectedToRoblox, 
   generatedCode, 
-  setGeneratedCode 
+  setGeneratedCode,
+  onUserUpdate
 }: any) => {
   return (
     <div className="flex bg-[#000000] min-h-screen text-white overflow-hidden relative selection:bg-white/30 selection:text-white font-sans">
@@ -74,17 +76,16 @@ const DashboardLayout = ({
           )}
 
           {activeTab === 'settings' && (
-             <div className="flex-1 h-full w-full flex items-center justify-center border border-white/5 rounded-2xl bg-black/40 backdrop-blur-sm">
-               <div className="text-center flex flex-col items-center">
-                 <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-                   <svg className="w-8 h-8 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                   </svg>
-                 </div>
-                 <h2 className="text-lg font-bold uppercase tracking-wider mb-2">Engine Settings</h2>
-                 <p className="text-white/40 text-sm max-w-sm">Configure environment variables and engine preferences.</p>
-               </div>
+             <div className="flex-1 h-full w-full border border-white/5 rounded-2xl bg-[#030304]/60 backdrop-blur-sm p-6 md:p-8 overflow-hidden flex flex-col">
+               <SettingsTab onSettingsChange={(settings) => {
+                 onUserUpdate({
+                   username: settings.username,
+                   nickname: settings.nickname,
+                   avatar: settings.avatar
+                 });
+                 // Synchronize Roblox connection status as connected
+                 setConnectedToRoblox(true);
+               }} />
              </div>
           )}
 
@@ -99,11 +100,18 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('ai');
   const [generatedCode, setGeneratedCode] = useState<string>("");
-  const [connectedToRoblox, setConnectedToRoblox] = useState(!!initialCode);
-  const [user, setUser] = useState<{username: string, avatar: string} | null>(initialCode ? {
-    username: "RobloxianDev_01",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
-  } : null);
+  const [connectedToRoblox, setConnectedToRoblox] = useState(true); // Connected by default to welcome users immediately
+  
+  const [user, setUser] = useState<{username: string, nickname?: string, avatar: string} | null>(() => {
+    const cachedUser = localStorage.getItem("apex_username") || "RobloxianDev_01";
+    const cachedNick = localStorage.getItem("apex_nickname") || "Apex Developer";
+    const cachedAv = localStorage.getItem("apex_avatar") || "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527";
+    return {
+      username: cachedUser,
+      nickname: cachedNick,
+      avatar: cachedAv
+    };
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,9 +121,16 @@ export default function App() {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
     if (code) {
+      const usernameVal = "RobloxianDev_01";
+      const nicknameVal = "Apex Developer";
+      const avatarVal = "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527";
+      localStorage.setItem("apex_username", usernameVal);
+      localStorage.setItem("apex_nickname", nicknameVal);
+      localStorage.setItem("apex_avatar", avatarVal);
       setUser({
-        username: "RobloxianDev_01",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
+        username: usernameVal,
+        nickname: nicknameVal,
+        avatar: avatarVal
       });
       setConnectedToRoblox(true);
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -141,6 +156,7 @@ export default function App() {
         setConnectedToRoblox={setConnectedToRoblox}
         generatedCode={generatedCode}
         setGeneratedCode={setGeneratedCode}
+        onUserUpdate={(updated: any) => setUser(updated)}
       />} />
       <Route path="/privacy-policy" element={<LegalPage page="privacy" />} />
       <Route path="/terms-of-service" element={<LegalPage page="terms" />} />

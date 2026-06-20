@@ -18,7 +18,7 @@ async function startServer() {
   // Main generation endpoint for game mechanics
   app.post("/api/generate", async (req, res) => {
     try {
-      const { prompt, aiModel } = req.body;
+      const { prompt, aiModel, customOpenAiKey, customGeminiKey } = req.body;
       let generatedCode = "";
 
       if (!prompt) {
@@ -26,10 +26,11 @@ async function startServer() {
       }
 
       if (aiModel === "openai") {
-        if (!process.env.OPENAI_API_KEY) {
-          return res.status(500).json({ error: "OpenAI API key is missing" });
+        const apiKey = customOpenAiKey || process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+          return res.status(400).json({ error: "OpenAI API key is missing. Please configure it in Settings." });
         }
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const openai = new OpenAI({ apiKey });
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
@@ -42,10 +43,11 @@ async function startServer() {
         });
         generatedCode = completion.choices[0]?.message.content || "-- No code generated";
       } else {
-        if (!process.env.GEMINI_API_KEY) {
-          return res.status(500).json({ error: "Gemini API key is missing" });
+        const apiKey = customGeminiKey || process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          return res.status(400).json({ error: "Gemini API key is missing. Please configure it in Settings." });
         }
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: `You are an expert Roblox Luau game developer. Generate only valid Luau code for this request. Do not wrap with backticks or markdown:\n\n${prompt}`
