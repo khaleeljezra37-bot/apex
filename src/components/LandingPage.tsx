@@ -1,0 +1,133 @@
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { Sparkles, Gamepad2, Blocks, ArrowRight } from "lucide-react";
+
+import bloxFruitsImg from '../assets/images/roblox_bloxfruits_1781796846926.jpg';
+import gardenImg from '../assets/images/roblox_garden_1781796862226.jpg';
+import petsImg from '../assets/images/roblox_pets_1781796879853.jpg';
+
+export default function LandingPage({ onLogin }: { onLogin: () => void }) {
+  const [prompt, setPrompt] = useState("");
+
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (prompt.trim()) {
+      onLogin();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#000] text-white flex flex-col font-sans selection:bg-white/30 overflow-hidden relative">
+      {/* Background FX */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+      <div className="absolute inset-x-0 top-0 h-[500px] bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none"></div>
+      
+      {/* Sleek Minimal Navbar */}
+      <nav className="relative z-20 flex items-center justify-between px-8 py-6 w-full max-w-7xl mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+            <Blocks className="w-5 h-5 text-black" />
+          </div>
+          <span className="text-xl font-black tracking-tighter text-white uppercase">Apex</span>
+        </div>
+        <div className="flex items-center gap-8">
+          <button className="hidden md:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Docs</button>
+          <button onClick={onLogin} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Sign In</button>
+          <button 
+            onClick={onLogin}
+            className="px-6 py-2.5 bg-white text-black hover:bg-gray-200 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+          >
+            Open Studio
+          </button>
+        </div>
+      </nav>
+
+      {/* Main Content Centered */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10 w-full max-w-5xl mx-auto pb-20">
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="text-center w-full flex flex-col items-center"
+        >
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-10 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            </span>
+            <span className="text-xs font-bold uppercase tracking-widest text-white/70">Engine Online</span>
+          </div>
+
+          <h1 className="text-6xl md:text-8xl lg:text-[7rem] font-black tracking-tighter leading-[0.9] text-white mb-8 text-center drop-shadow-2xl font-sans uppercase">
+            Build Games <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40">In Seconds.</span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-white/50 mb-12 leading-relaxed max-w-2xl text-center font-medium">
+            Describe the world, mechanics, and style. Apex Engine writes the code and structures the game instantly. Pure black and white focus.
+          </p>
+
+          <form onSubmit={handleGenerate} className="w-full max-w-3xl relative group">
+            {/* Ambient glow behind input */}
+            <div className="absolute -inset-1 bg-white/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+            
+            <div className="relative flex flex-col md:flex-row bg-[#0a0a0a] border border-white/20 rounded-3xl p-2 shadow-2xl overflow-hidden focus-within:border-white/50 transition-colors">
+              <input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="A pirate combat game with physical fruit magic..."
+                className="w-full bg-transparent text-white placeholder-white/30 outline-none py-5 px-6 text-lg"
+              />
+              <button
+                type="submit"
+                className="flex items-center justify-center px-8 bg-white text-black hover:bg-gray-200 rounded-2xl font-bold transition-all whitespace-nowrap py-4 md:py-0 mt-2 md:mt-0 uppercase tracking-widest text-sm"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Initialize
+              </button>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {['Combat RPG', 'Tycoon', 'Simulator', 'Obby'].map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setPrompt(`Generate a ${tag.toLowerCase()} game where...`)}
+                  className="text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 transition-colors bg-white/5 backdrop-blur-sm"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </form>
+        </motion.div>
+
+        {/* Floating Grayscale Visuals Bottom */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
+          className="w-full grid grid-cols-3 gap-6 mt-24 max-w-5xl"
+        >
+          <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group">
+            <img src={bloxFruitsImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Combat" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest">Action / Combat</p>
+          </div>
+          <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group md:-translate-y-8">
+            <img src={gardenImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Garden" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest">Simulation</p>
+          </div>
+          <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group">
+            <img src={petsImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Pets" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest">Social</p>
+          </div>
+        </motion.div>
+
+      </div>
+    </div>
+  );
+}
