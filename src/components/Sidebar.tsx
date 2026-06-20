@@ -4,7 +4,7 @@ import { useState } from "react";
 
 const navItems = [
   { icon: Layers, id: "layers", label: "Hierarchy" },
-  { icon: LayoutDashboard, id: "workspace", label: "Workspace" },
+  { icon: LayoutDashboard, id: "workspace", label: "Dashboard" },
   { icon: Box, id: "assets", label: "Assets" },
   { icon: CodeXml, id: "scripts", label: "Scripts" },
   { icon: Sparkles, id: "ai", label: "AI Assistant" },

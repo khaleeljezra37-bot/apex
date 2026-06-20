@@ -12,51 +12,23 @@ import AssetLibraryTab from './components/AssetLibraryTab';
 import LemonadeWorkspace from './components/LemonadeWorkspace';
 import LegalPage from './components/LegalPage';
 
-export default function App() {
-  const initialCode = new URLSearchParams(window.location.search).get('code');
-
-  const [view, setView] = useState<'landing' | 'auth' | 'app'>(initialCode ? 'app' : 'landing');
-  const [activeTab, setActiveTab] = useState('ai');
-  const [generatedCode, setGeneratedCode] = useState<string>("");
-  const [connectedToRoblox, setConnectedToRoblox] = useState(!!initialCode);
-  const [user, setUser] = useState<{username: string, avatar: string} | null>(initialCode ? {
-    username: "RobloxianDev_01",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
-  } : null);
-
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    // If there is a code in the URL, we've successfully authenticated and loaded the state synchronously.
-    // We just need to clean up the URL to remove the code without triggering a reload.
-    const params = new URLSearchParams(location.search);
-    if (params.get('code')) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [location.search]);
-
-  const MainApp = () => {
-    if (view === 'landing') {
-      return <LandingPage onLogin={() => setView('auth')} />;
-    }
-
-    if (view === 'auth') {
-      return <AuthPage onLogin={(userData) => {
-        setUser(userData);
-        setConnectedToRoblox(true);
-        setView('app');
-      }} onBack={() => setView('landing')} />;
-    }
-
-    return (
-      <div className="flex bg-[#000000] min-h-screen text-white overflow-hidden relative selection:bg-white/30 selection:text-white font-sans">
-        {/* Subtle ambient background glow */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
-          <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
-        </div>
+const DashboardLayout = ({ 
+  user, 
+  activeTab, 
+  setActiveTab, 
+  connectedToRoblox, 
+  setConnectedToRoblox, 
+  generatedCode, 
+  setGeneratedCode 
+}: any) => {
+  return (
+    <div className="flex bg-[#000000] min-h-screen text-white overflow-hidden relative selection:bg-white/30 selection:text-white font-sans">
+      {/* Subtle ambient background glow */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
+      </div>
 
       <Sidebar user={user} active={activeTab} setActive={setActiveTab} />
       
@@ -119,12 +91,52 @@ export default function App() {
         </div>
       </main>
     </div>
-    );
-  };
+  );
+};
+
+export default function App() {
+  const initialCode = new URLSearchParams(window.location.search).get('code');
+
+  const [activeTab, setActiveTab] = useState('ai');
+  const [generatedCode, setGeneratedCode] = useState<string>("");
+  const [connectedToRoblox, setConnectedToRoblox] = useState(!!initialCode);
+  const [user, setUser] = useState<{username: string, avatar: string} | null>(initialCode ? {
+    username: "RobloxianDev_01",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
+  } : null);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If there is a code in the URL, we've successfully authenticated and loaded the state synchronously.
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    if (code) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location.search, navigate]);
+
+    // Clean up code from url
 
   return (
     <Routes>
-      <Route path="/" element={<MainApp />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/sign-in" element={<AuthPage onLogin={(userData) => {
+        setUser(userData);
+        setConnectedToRoblox(true);
+        navigate('/dashboard');
+      }} onBack={() => navigate('/')} />} />
+      <Route path="/dashboard" element={<DashboardLayout 
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        connectedToRoblox={connectedToRoblox}
+        setConnectedToRoblox={setConnectedToRoblox}
+        generatedCode={generatedCode}
+        setGeneratedCode={setGeneratedCode}
+      />} />
       <Route path="/privacy-policy" element={<LegalPage page="privacy" />} />
       <Route path="/terms-of-service" element={<LegalPage page="terms" />} />
     </Routes>

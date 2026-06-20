@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Sparkles, Gamepad2, Blocks, ArrowRight } from "lucide-react";
 
@@ -7,13 +7,14 @@ import bloxFruitsImg from '../assets/images/blox_fruits_1781920089623.jpg';
 import gardenImg from '../assets/images/pet_simulator_1781920105990.jpg';
 import petsImg from '../assets/images/adopt_me_1781920120266.jpg';
 
-export default function LandingPage({ onLogin }: { onLogin: () => void }) {
+export default function LandingPage() {
   const [prompt, setPrompt] = useState("");
+  const navigate = useNavigate();
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
-      onLogin();
+      navigate('/sign-in');
     }
   };
 
@@ -35,12 +36,12 @@ export default function LandingPage({ onLogin }: { onLogin: () => void }) {
           <a href="https://create.roblox.com/docs" target="_blank" rel="noopener noreferrer" className="hidden md:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors cursor-pointer">Docs</a>
           <Link to="/privacy-policy" className="hidden lg:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Privacy</Link>
           <Link to="/terms-of-service" className="hidden lg:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Terms</Link>
-          <button onClick={onLogin} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Sign In</button>
+          <button onClick={() => navigate('/sign-in')} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Sign In</button>
           <button 
-            onClick={onLogin}
+            onClick={() => navigate('/dashboard')}
             className="hidden sm:block px-6 py-2.5 bg-white text-black hover:bg-gray-200 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
           >
-            Open Studio
+            Open Dashboard
           </button>
         </div>
       </nav>
