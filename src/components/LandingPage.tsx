@@ -20,9 +20,12 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#000] text-white flex flex-col font-sans selection:bg-white/30 overflow-hidden relative">
-      {/* Background FX */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px]"></div>
-      <div className="absolute inset-x-0 top-0 h-[500px] bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none"></div>
+      {/* Background FX Glows */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
+      </div>
       
       {/* Sleek Minimal Navbar */}
       <nav className="relative z-20 flex items-center justify-between px-8 py-6 w-full max-w-7xl mx-auto">
@@ -76,7 +79,7 @@ export default function LandingPage() {
             {/* Ambient glow behind input */}
             <div className="absolute -inset-1 bg-white/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
             
-            <div className="relative flex flex-col md:flex-row bg-[#0a0a0a] border border-white/20 rounded-3xl p-2 shadow-2xl overflow-hidden focus-within:border-white/50 transition-colors">
+            <div className="relative flex flex-col md:flex-row bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-3xl p-2 shadow-2xl overflow-hidden focus-within:border-white/30 transition-colors">
               <input
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}

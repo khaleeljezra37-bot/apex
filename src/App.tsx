@@ -9,7 +9,7 @@ import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import WorkspaceTab from './components/WorkspaceTab';
 import AssetLibraryTab from './components/AssetLibraryTab';
-import LemonadeWorkspace from './components/LemonadeWorkspace';
+import ApexWorkspace from './components/ApexWorkspace';
 import LegalPage from './components/LegalPage';
 
 const DashboardLayout = ({ 
@@ -32,12 +32,12 @@ const DashboardLayout = ({
 
       <Sidebar user={user} active={activeTab} setActive={setActiveTab} />
       
-      <main className="flex-1 flex flex-col min-h-screen relative z-10 border-l border-white/5 bg-[#030303]/80 backdrop-blur-3xl shadow-[-20px_0_40px_rgba(0,0,0,0.8)]">
+      <main className="flex-1 flex flex-col min-h-screen relative z-10 border-l border-white/5 bg-white/[0.02] backdrop-blur-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)]">
         <Header connected={connectedToRoblox} setConnected={setConnectedToRoblox} user={user} />
         
         <div className="flex-1 p-4 md:p-6 lg:p-6 flex flex-col lg:flex-row gap-6 overflow-hidden h-[calc(100vh-80px)]">
           {activeTab === 'ai' && (
-             <LemonadeWorkspace 
+             <ApexWorkspace 
                connected={connectedToRoblox} 
                setConnected={setConnectedToRoblox} 
                onGenerated={setGeneratedCode} 
@@ -113,6 +113,11 @@ export default function App() {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
     if (code) {
+      setUser({
+        username: "RobloxianDev_01",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
+      });
+      setConnectedToRoblox(true);
       window.history.replaceState({}, document.title, window.location.pathname);
       navigate('/dashboard', { replace: true });
     }

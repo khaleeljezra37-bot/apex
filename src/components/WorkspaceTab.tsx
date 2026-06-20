@@ -75,7 +75,7 @@ function Globe(props: any) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
 }
 
-function InstanceTreeItem({ node, level = 0 }: { node: InstanceNode, level?: number }) {
+function InstanceTreeItem({ node, level = 0 }: { node: InstanceNode, level?: number, key?: any }) {
   const [expanded, setExpanded] = useState(level === 0);
   const Icon = node.icon;
   const hasChildren = node.children && node.children.length > 0;

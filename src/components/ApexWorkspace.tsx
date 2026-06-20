@@ -25,14 +25,14 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-interface LemonadeWorkspaceProps {
+interface ApexWorkspaceProps {
   connected: boolean;
   setConnected: (state: boolean) => void;
   onGenerated: (code: string) => void;
   generatedCode: string;
 }
 
-export default function LemonadeWorkspace({ connected, setConnected, onGenerated, generatedCode }: LemonadeWorkspaceProps) {
+export default function ApexWorkspace({ connected, setConnected, onGenerated, generatedCode }: ApexWorkspaceProps) {
   const [prompt, setPrompt] = useState('make a me a game that spawn zombies');
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
@@ -232,85 +232,33 @@ return ZombieRig`;
               className="w-full max-w-5xl flex flex-col items-center relative py-12"
             >
               
-              {/* Floating Inventory Cards on the Left Side */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-4 w-[240px]">
-                <div className="flex items-center justify-between px-3 py-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-white/40">Inventory</span>
-                  <span className="bg-white/10 text-[9px] font-bold text-white px-2 py-0.5 rounded-full select-none">1 ACTIVE</span>
-                </div>
-
-                {/* Punching Mechanic Card (Image 3) */}
-                <div 
-                  onClick={() => setPrompt("Create a super smooth punching combat mechanic with dynamic camera shake")}
-                  className="bg-[#0b0b0d]/90 border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-white/30 transition-all duration-300 shadow-2xl relative overflow-hidden group hover:scale-[1.02]"
-                >
-                  {/* ANIMATED Badge */}
-                  <div className="absolute top-3 left-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider z-10 backdrop-blur-md">
-                    ANIMATED
-                  </div>
-
-                  {/* Gradient Background mockup for the avatar thumbnail */}
-                  <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-purple-900/60 via-slate-900 to-black border border-white/5 flex items-center justify-center overflow-hidden mb-3.5 relative">
-                    <div className="absolute inset-0 bg-radial-gradient from-blue-500/10 to-transparent opacity-80 pointer-events-none"></div>
-                    {/* Glowing punch spark */}
-                    <div className="w-14 h-14 rounded-full bg-blue-400/20 blur-xl absolute animate-pulse"></div>
-                    <Gamepad2 className="w-9 h-9 text-white/50 group-hover:text-white/80 group-hover:scale-110 transition-all duration-300 relative z-10" />
-                  </div>
-
-                  <div>
-                    <h4 className="font-bold text-[13px] text-white tracking-wide group-hover:text-blue-300 transition-colors">Punching Mechanic</h4>
-                    <p className="text-[10px] text-white/40 uppercase mt-1 tracking-wider">Fast Melee System</p>
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => setPrompt("make a me a game that spawn zombies")}
-                  className="bg-[#0b0b0d]/30 border border-white/5 hover:border-white/15 rounded-2xl p-3 cursor-pointer transition-all duration-300 flex items-center gap-3 group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-white/30 group-hover:text-white/75" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-[11px] text-white/60 group-hover:text-white leading-tight">Zombie Wave</h5>
-                    <p className="text-[9px] text-white/30 mt-0.5 font-mono">1.25 cost</p>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Central Branding Logo & Text (Image 3) */}
-              <div className="flex flex-col items-center text-center mb-16">
-                {/* Yellow 4-lobed logo design */}
-                <div className="w-24 h-24 relative mb-6 group cursor-pointer">
-                  <div className="absolute inset-0 bg-yellow-400/10 rounded-full blur-2xl group-hover:bg-yellow-400/20 transition-all duration-500"></div>
+              {/* Central Branding Logo & Text */}
+              <div className="flex flex-col items-center text-center mb-16 select-none">
+                <div className="w-20 h-20 relative mb-6 group cursor-pointer flex items-center justify-center">
+                  <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-500"></div>
                   
-                  {/* High Fidelity SVG Lemonade Logo */}
-                  <svg className="w-24 h-24 transform group-hover:rotate-45 transition-transform duration-700 ease-out" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g filter="url(#glow)">
-                      {/* Lobe 1 (Top Left) */}
-                      <path d="M50 50 C30 50, 20 38, 20 20 C20 2, 38 2, 50 20 Z" fill="#e2f33c" />
-                      {/* Lobe 2 (Top Right) */}
-                      <path d="M50 50 C50 30, 62 20, 80 20 C98 20, 98 38, 80 50 Z" fill="#dffe25" />
-                      {/* Lobe 3 (Bottom Right) */}
-                      <path d="M50 50 C70 50, 80 62, 80 80 C80 98, 62 98, 50 80 Z" fill="#b9df18" />
-                      {/* Lobe 4 (Bottom Left) */}
-                      <path d="M50 50 C50 70, 38 80, 20 80 C2 80, 2 62, 20 50 Z" fill="#e8ff43" />
-                      {/* Center Hub */}
-                      <circle cx="50" cy="50" r="8" fill="#121212" stroke="#dffe25" strokeWidth="2" />
-                    </g>
-                    <defs>
-                      <filter id="glow" x="0" y="0" width="100" height="100" filterUnits="userSpaceOnUse">
-                        <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#dffe25" floodOpacity="0.3"/>
-                      </filter>
-                    </defs>
+                  {/* Clean glowing metric isometric logo */}
+                  <svg 
+                    className="w-16 h-16 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] transform group-hover:scale-105 transition-transform duration-500" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
+                    <line x1="12" y1="22" x2="12" y2="12" />
+                    <line x1="12" y1="12" x2="22" y2="8.5" />
+                    <line x1="12" y1="12" x2="2" y2="8.5" />
                   </svg>
                 </div>
 
-                <h2 className="text-5xl md:text-6xl font-black tracking-tight text-white uppercase mb-2">
-                  Lemonade
+                <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white uppercase mb-2">
+                  Apex AI
                 </h2>
-                <p className="text-[13px] font-extrabold uppercase tracking-[0.25em] text-white/40">
-                  turn words into Roblox games
+                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/30">
+                  Turn words into Roblox instances
                 </p>
               </div>
 
@@ -565,7 +513,7 @@ return ZombieRig`;
               <div className="space-y-5 text-center py-2">
                 <h3 className="text-xl font-bold uppercase tracking-wide text-white">Connect plugin</h3>
                 <p className="text-[13px] text-white/50 leading-relaxed max-w-xs mx-auto">
-                  You must first install and connect the Lemonade plugin on Roblox Studio.
+                  You must first install and connect the Apex plugin on Roblox Studio.
                 </p>
                 
                 <button 
@@ -606,7 +554,7 @@ return ZombieRig`;
                 <input 
                   type="text" 
                   readOnly
-                  placeholder="Lemonade AI" 
+                  placeholder="Apex AI" 
                   className="w-full bg-[#111] border border-[#333] rounded-md pl-9 pr-4 py-1.5 text-xs text-white"
                 />
                 <Search className="w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -636,25 +584,31 @@ return ZombieRig`;
             <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
               <div className="w-full max-w-3xl bg-[#191b1d] border border-[#2e3135] rounded-xl p-6 shadow-2xl flex flex-col md:flex-row gap-8">
                 
-                {/* Left logo component (Yellow flower in store) */}
+                {/* Left logo component */}
                 <div className="w-full md:w-64 max-w-[240px] aspect-square rounded-xl bg-[#0c0c0e] border border-[#2c2f33] flex items-center justify-center shrink-0 p-8 shadow-inner relative group">
-                  {/* Giant Glowing Flower */}
-                  <svg className="w-full h-full text-yellow-300" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M50 50 C30 50, 20 38, 20 20 C20 2, 38 2, 50 20 Z" fill="#e2f33c" />
-                    <path d="M50 50 C50 30, 62 20, 80 20 C98 20, 98 38, 80 50 Z" fill="#dffe25" />
-                    <path d="M50 50 C70 50, 80 62, 80 80 C80 98, 62 98, 50 80 Z" fill="#b9df18" />
-                    <path d="M50 50 C50 70, 38 80, 20 80 C2 80, 2 62, 20 50 Z" fill="#e8ff43" />
-                    <circle cx="50" cy="50" r="10" fill="#191b1d" stroke="#dffe25" strokeWidth="2.5" />
+                  <svg 
+                    className="w-24 h-24 text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
+                    <line x1="12" y1="22" x2="12" y2="12" />
+                    <line x1="12" y1="12" x2="22" y2="8.5" />
+                    <line x1="12" y1="12" x2="2" y2="8.5" />
                   </svg>
                 </div>
 
                 {/* Right detail area */}
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <h1 className="text-2xl font-black text-white mb-1 tracking-wide">Lemonade AI</h1>
+                    <h1 className="text-2xl font-black text-white mb-1 tracking-wide">Apex AI</h1>
                     <div className="flex items-center gap-1 text-xs text-[#a0a5ad] mb-4">
                       <span>By</span>
-                      <span className="text-[#3c9bf1] font-bold hover:underline cursor-pointer">Lemonade Labs</span>
+                      <span className="text-[#3c9bf1] font-bold hover:underline cursor-pointer">Apex Labs</span>
                     </div>
 
                     {/* Votes & ratings metrics */}
@@ -694,7 +648,7 @@ return ZombieRig`;
                     </div>
 
                     <div className="text-xs text-[#a0a5ad] leading-relaxed mb-6 space-y-2">
-                      <p>Official plugin for Lemonade.</p>
+                      <p>Official plugin for Apex.</p>
                       <p className="font-semibold text-white">It's time to turn your dream ideas into real games!</p>
                     </div>
                   </div>
