@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Globe, Key, Puzzle, Terminal, ExternalLink, Workflow, Settings2, Info, Copy, Check, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => void, onBack: () => void }) {
   const [activeMethod, setActiveMethod] = useState<'oauth' | 'cloud' | 'plugin'>('oauth');
@@ -10,14 +11,16 @@ export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => 
   
   // Custom credentials inputs
   const [clientId, setClientId] = useState('1434336652378086576');
-  const [redirectUri, setRedirectUri] = useState('https://clerk.lemonade.gg/v1/oauth_callback');
+  const [redirectUri, setRedirectUri] = useState('https://apex-rblx.vercel.app/');
   const [oauthState, setOauthState] = useState('5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb');
+  const [scopes, setScopes] = useState('openid profile');
 
   const handleOauth = () => {
     // Generate URL dynamically with user-defined client details
     const encodedRedirect = encodeURIComponent(redirectUri);
     const encodedState = encodeURIComponent(oauthState);
-    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=profile+openid&state=${encodedState}&step=accountConfirm`;
+    const encodedScopes = encodeURIComponent(scopes);
+    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&step=accountConfirm`;
     
     const popup = window.open(authUrl, "RobloxAuth", "width=800,height=800");
     
@@ -59,19 +62,19 @@ export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => 
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none"></div>
 
       {/* Header */}
-      <div className="px-8 pt-8 relative z-10 w-full max-w-7xl mx-auto">
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="px-8 pt-8 relative z-10 w-full max-w-7xl mx-auto">
         <button 
           onClick={onBack}
           className="flex items-center text-white/50 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </button>
-      </div>
+      </motion.div>
 
       <div className="flex-1 flex flex-col lg:flex-row items-center justify-center px-6 md:px-12 py-12 relative z-10 w-full max-w-7xl mx-auto gap-12 lg:gap-24">
         
         {/* Left side: Context */}
-        <div className="flex-1 w-full relative">
+        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="flex-1 w-full relative">
           <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-8 leading-[0.9]">
             Establish <br/> <span className="text-white/30">Connection.</span>
           </h1>
@@ -89,10 +92,10 @@ export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => 
                 </div>
              </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right side: Simplified OAuth Login */}
-        <div className="flex-1 w-full max-w-md flex flex-col gap-6">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }} className="flex-1 w-full max-w-md flex flex-col gap-6">
            <div className="border border-white/20 rounded-[2rem] bg-[#0a0a0a] shadow-[0_0_50px_rgba(255,255,255,0.03)] overflow-hidden">
               <div className="p-8 flex items-center gap-5 border-b border-white/5">
                  <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5">
@@ -123,21 +126,6 @@ export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => 
                      <>Connect Roblox Account <ExternalLink className="w-4 h-4"/></>
                    )}
                  </button>
-
-                 {/* Simulated Login as backup fallback */}
-                 <div className="text-center pt-2">
-                   <button
-                     onClick={() => {
-                       onLogin({
-                         username: "RobloxianDev_01",
-                         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527"
-                       });
-                     }}
-                     className="text-[10px] text-white/45 hover:text-white underline font-extrabold uppercase tracking-widest transition-colors cursor-pointer"
-                   >
-                     Skip and Connect Instantly (Developer Mode)
-                   </button>
-                 </div>
 
                  {/* Troubleshooting Invalid Redirect URI */}
                  <div className="border-t border-white/5 pt-5 space-y-4">
@@ -195,13 +183,26 @@ export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => 
                            </div>
                          </div>
 
+                         <div className="bg-black/40 p-3 rounded-lg border border-white/5">
+                           <label className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest mb-1.5">2. Required Scopes:</label>
+                           <input
+                             type="text"
+                             value={scopes}
+                             onChange={(e) => setScopes(e.target.value)}
+                             className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-[11px] font-mono text-white/80 outline-none"
+                             placeholder="openid profile"
+                           />
+                           <p className="text-[9px] text-amber-500/80 mt-1 uppercase tracking-wider font-bold">Important: You must enable these scopes in Roblox Creator Hub.</p>
+                         </div>
+
                          <div className="bg-black/40 p-3.5 rounded-lg border border-white/5 space-y-2">
-                           <span className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest">2. In Roblox Creator Hub:</span>
+                           <span className="block text-[9px] font-extrabold text-white/40 uppercase tracking-widest">3. In Roblox Creator Hub:</span>
                            <ol className="list-decimal list-inside pl-1 text-[11px] text-white/60 space-y-1.5 leading-relaxed">
                              <li>Go to the <a href="https://create.roblox.com/dashboard/credentials" target="_blank" rel="noopener noreferrer" className="text-amber-300 font-bold underline hover:text-amber-200">Roblox Developer Console</a>.</li>
                              <li>Open your app (Client ID **{clientId}**).</li>
                              <li>Inside **OAuth 2.0 Applications**, click on the **Redirect URLs** tab.</li>
                              <li>Add/Paste the exact URL copied above (**{redirectUri || "entered above"}**) and click **Save**.</li>
+                             <li>Go to the **Permissions** tab and ensure all requested scopes (**{scopes}**) are enabled.</li>
                            </ol>
                          </div>
                        </div>
@@ -210,7 +211,7 @@ export default function AuthPage({ onLogin, onBack }: { onLogin: (user: any) => 
                  </div>
               </div>
            </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

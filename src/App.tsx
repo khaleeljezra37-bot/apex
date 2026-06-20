@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import AIChatPanel from './components/AIChatPanel';
@@ -9,6 +10,7 @@ import AuthPage from './components/AuthPage';
 import WorkspaceTab from './components/WorkspaceTab';
 import AssetLibraryTab from './components/AssetLibraryTab';
 import LemonadeWorkspace from './components/LemonadeWorkspace';
+import LegalPage from './components/LegalPage';
 
 export default function App() {
   const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
@@ -17,26 +19,27 @@ export default function App() {
   const [connectedToRoblox, setConnectedToRoblox] = useState(false);
   const [user, setUser] = useState<{username: string, avatar: string} | null>(null);
 
-  if (view === 'landing') {
-    return <LandingPage onLogin={() => setView('auth')} />;
-  }
+  const MainApp = () => {
+    if (view === 'landing') {
+      return <LandingPage onLogin={() => setView('auth')} />;
+    }
 
-  if (view === 'auth') {
-    return <AuthPage onLogin={(userData) => {
-      setUser(userData);
-      setConnectedToRoblox(true);
-      setView('app');
-    }} onBack={() => setView('landing')} />;
-  }
+    if (view === 'auth') {
+      return <AuthPage onLogin={(userData) => {
+        setUser(userData);
+        setConnectedToRoblox(true);
+        setView('app');
+      }} onBack={() => setView('landing')} />;
+    }
 
-  return (
-    <div className="flex bg-[#000000] min-h-screen text-white overflow-hidden relative selection:bg-white/30 selection:text-white font-sans">
-      {/* Subtle ambient background glow */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
-        <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
-      </div>
+    return (
+      <div className="flex bg-[#000000] min-h-screen text-white overflow-hidden relative selection:bg-white/30 selection:text-white font-sans">
+        {/* Subtle ambient background glow */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
+          <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
+        </div>
 
       <Sidebar user={user} active={activeTab} setActive={setActiveTab} />
       
@@ -99,5 +102,14 @@ export default function App() {
         </div>
       </main>
     </div>
+    );
+  };
+
+  return (
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route path="/privacy-policy" element={<LegalPage page="privacy" />} />
+      <Route path="/terms-of-service" element={<LegalPage page="terms" />} />
+    </Routes>
   );
 }

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Sparkles, Gamepad2, Blocks, ArrowRight } from "lucide-react";
 
-import bloxFruitsImg from '../assets/images/roblox_bloxfruits_1781796846926.jpg';
-import gardenImg from '../assets/images/roblox_garden_1781796862226.jpg';
-import petsImg from '../assets/images/roblox_pets_1781796879853.jpg';
+import bloxFruitsImg from '../assets/images/blox_fruits_1781920089623.jpg';
+import gardenImg from '../assets/images/pet_simulator_1781920105990.jpg';
+import petsImg from '../assets/images/adopt_me_1781920120266.jpg';
 
 export default function LandingPage({ onLogin }: { onLogin: () => void }) {
   const [prompt, setPrompt] = useState("");
@@ -31,7 +32,7 @@ export default function LandingPage({ onLogin }: { onLogin: () => void }) {
           <span className="text-xl font-black tracking-tighter text-white uppercase">Apex</span>
         </div>
         <div className="flex items-center gap-8">
-          <button className="hidden md:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Docs</button>
+          <a href="https://create.roblox.com/docs" target="_blank" rel="noopener noreferrer" className="hidden md:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors cursor-pointer">Docs</a>
           <button onClick={onLogin} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Sign In</button>
           <button 
             onClick={onLogin}
@@ -111,22 +112,34 @@ export default function LandingPage({ onLogin }: { onLogin: () => void }) {
           className="w-full grid grid-cols-3 gap-6 mt-24 max-w-5xl"
         >
           <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group">
-            <img src={bloxFruitsImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Combat" />
+            <img src={bloxFruitsImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Blox Fruits" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest">Action / Combat</p>
+            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest text-[#FFF]">Blox Fruits</p>
+            <p className="absolute top-4 right-4 text-[9px] font-bold uppercase tracking-widest bg-black/50 px-2 py-1 rounded border border-white/10">Action / Combat</p>
           </div>
           <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group md:-translate-y-8">
-            <img src={gardenImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Garden" />
+            <img src={gardenImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Pet Simulator 99" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest">Simulation</p>
+            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest text-[#FFF]">Pet Simulator</p>
+            <p className="absolute top-4 right-4 text-[9px] font-bold uppercase tracking-widest bg-black/50 px-2 py-1 rounded border border-white/10">Simulation</p>
           </div>
           <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 relative group">
-            <img src={petsImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Pets" />
+            <img src={petsImg} className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt="Adopt Me!" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest">Social</p>
+            <p className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-widest text-[#FFF]">Adopt Me!</p>
+            <p className="absolute top-4 right-4 text-[9px] font-bold uppercase tracking-widest bg-black/50 px-2 py-1 rounded border border-white/10">Social</p>
           </div>
         </motion.div>
 
+        {/* Footer Legal Link */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 1 }} className="mt-20 w-full max-w-5xl text-center border-t border-white/5 pt-8 z-10 pb-12 flex justify-center gap-6">
+           <Link to="/privacy-policy" className="text-[10px] text-white/30 hover:text-white/60 uppercase tracking-widest font-bold transition-colors">
+             Privacy Policy
+           </Link>
+           <Link to="/terms-of-service" className="text-[10px] text-white/30 hover:text-white/60 uppercase tracking-widest font-bold transition-colors">
+             Terms of Service
+           </Link>
+        </motion.div>
       </div>
     </div>
   );
