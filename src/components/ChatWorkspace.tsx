@@ -1,21 +1,40 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Moon,
-  ArrowUpRight,
   MessageSquare,
   Settings,
-  LogOut,
+  Bot,
+  Compass,
+  AtSign,
+  Image as ImageIcon,
+  ChevronDown,
+  Database,
+  ArrowRight,
+  X,
 } from "lucide-react";
 
 export default function ChatWorkspace() {
   const [inputText, setInputText] = useState("");
-  const [model, setModel] = useState("gemini");
   const [userAvatar, setUserAvatar] = useState(
     "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527",
   );
   const [username, setUsername] = useState<string | null>(null);
+  const [model, setModel] = useState<"Gemini Pro" | "OpenAI GPT-4">(
+    "Gemini Pro",
+  );
+  const [activeSidebar, setActiveSidebar] = useState<
+    "history" | "settings" | null
+  >(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      console.log("Uploaded images:", e.target.files);
+    }
+  };
 
   useEffect(() => {
     const avatar = localStorage.getItem("apex_avatar");
@@ -31,184 +50,284 @@ export default function ChatWorkspace() {
   return (
     <div className="flex bg-black min-h-screen text-white font-sans overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-[260px] bg-[#000000] border-r border-white/5 flex flex-col hidden md:flex">
-        <div className="p-4 flex items-center gap-2 mb-6">
-          {/* Logo */}
-          <div className="w-8 h-8 rounded flex items-center justify-center text-white">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-6 h-6"
+      <aside className="w-[60px] bg-[#0a0a0a] border-r border-white/5 flex-col items-center py-6 hidden md:flex z-50">
+        <div className="flex flex-col gap-4">
+          <div className="relative group flex items-center">
+            <button
+              onClick={() =>
+                setActiveSidebar(activeSidebar === "history" ? null : "history")
+              }
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors border ${activeSidebar === "history" ? "bg-white/20 text-white border-white/10" : "bg-white/10 text-white hover:bg-white/20 border-white/5"}`}
             >
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" />
-              <path d="M2 17L12 22L22 17" />
-              <path d="M2 12L12 17L22 12" />
-            </svg>
-          </div>
-          <span className="font-extrabold tracking-tight text-lg uppercase flex items-center gap-2 text-white">
-            Apex{" "}
-            <span className="text-[10px] font-medium px-2 py-[1px] rounded-full border border-white/20 text-white/70 tracking-normal lowercase">
-              beta
-            </span>
-          </span>
-        </div>
-
-        <div className="p-4 flex-1 flex flex-col gap-2 overflow-y-auto">
-          <button className="flex items-center gap-3 px-3 py-2.5 text-white/90 hover:text-white transition-colors w-full text-left rounded-lg bg-white/10 border border-white/10 mb-4">
-            <MessageSquare className="w-4 h-4 text-white" />
-            <span className="text-sm font-medium">New Chat</span>
-          </button>
-          <span className="text-[11px] text-white/40 font-bold px-2 uppercase tracking-widest mb-2">
-            Recent
-          </span>
-          <button className="flex items-center gap-3 px-3 py-2 text-white/50 hover:text-white/80 transition-colors w-full text-left rounded-lg">
-            <span className="text-sm">Combat System</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2 text-white/50 hover:text-white/80 transition-colors w-full text-left rounded-lg">
-            <span className="text-sm">Round Manager</span>
-          </button>
-        </div>
-
-        <div className="p-4 mt-auto">
-          <button className="w-full bg-[#111111] hover:bg-[#1a1a1a] border border-white/5 rounded-xl p-3 flex items-center justify-between transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-[#5865F2] flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white fill-current"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-                </svg>
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-sm font-bold text-white">Discord</span>
-                <span className="text-[10px] text-white/50">
-                  Join for gifts
-                </span>
-              </div>
+              <MessageSquare className="w-5 h-5" />
+            </button>
+            <div className="absolute left-14 px-2 py-1 bg-[#1a1a1a] border border-white/10 text-white text-xs font-semibold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
+              Chat History
             </div>
-            <ArrowUpRight className="w-4 h-4 text-white/30" />
-          </button>
+          </div>
+
+          <div className="relative group flex items-center">
+            <button
+              onClick={() =>
+                setActiveSidebar(
+                  activeSidebar === "settings" ? null : "settings",
+                )
+              }
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors border ${activeSidebar === "settings" ? "bg-white/10 text-white border-white/5" : "text-white/50 hover:text-white hover:bg-white/5 border-transparent"}`}
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            <div className="absolute left-14 px-2 py-1 bg-[#1a1a1a] border border-white/10 text-white text-xs font-semibold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
+              Settings
+            </div>
+          </div>
+
+          <div className="relative group flex items-center">
+            <button
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors border text-white/50 hover:text-white hover:bg-white/5 border-transparent`}
+            >
+              <Compass className="w-5 h-5" />
+            </button>
+            <div className="absolute left-14 px-2 py-1 bg-[#1a1a1a] border border-white/10 text-white text-xs font-semibold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
+              Explore Features
+            </div>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-0">
-        {/* Background Overlay */}
-        <div className="absolute inset-0 z-[-1] overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-black"></div>
-          <div className="absolute top-[-20%] left-[10%] w-[1000px] h-[1000px] bg-white/5 rounded-full blur-[150px] mix-blend-screen" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay"></div>
-        </div>
+      {/* Slide-out Panel */}
+      <div
+        className={`fixed top-0 left-[60px] h-full bg-[#111111] border-r border-white/5 z-40 transition-transform duration-300 ease-in-out ${activeSidebar ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ width: "300px" }}
+      >
+        <div className="p-6 flex flex-col h-full">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-lg font-bold text-white uppercase tracking-wider">
+              {activeSidebar === "history" && "Chat History"}
+              {activeSidebar === "settings" && "Settings"}
+            </h2>
+            <button
+              onClick={() => setActiveSidebar(null)}
+              className="text-white/50 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-        {/* Header */}
-        <header className="h-[60px] flex items-center justify-end px-6 z-10 w-full bg-black/50 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-            {!username ? (
-              <button
-                onClick={() => navigate("/sign-in")}
-                className="text-white/60 hover:text-white font-medium uppercase tracking-widest px-4 py-2 text-[11px] transition-colors"
-              >
-                Roblox Connect
-              </button>
-            ) : (
-              <span className="text-white/80 font-medium text-[13px] mr-2">
-                {username}
-              </span>
+          <div className="flex-1 overflow-y-auto">
+            {activeSidebar === "history" && (
+              <div className="flex flex-col gap-4">
+                <button
+                  onClick={() => setActiveSidebar(null)}
+                  className="w-full bg-white text-black font-bold py-2.5 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <MessageSquare className="w-4 h-4" /> New Chat
+                </button>
+                <div className="flex flex-col items-center justify-center mt-10 text-center px-4">
+                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                    <MessageSquare className="w-5 h-5 text-white/30" />
+                  </div>
+                  <p className="text-sm text-white/60 font-medium">
+                    No recent chats
+                  </p>
+                  <p className="text-xs text-white/40 mt-1">
+                    Your conversation history will appear here.
+                  </p>
+                </div>
+              </div>
             )}
 
-            <button
-              onClick={() => {
-                localStorage.removeItem("apex_username");
-                localStorage.removeItem("apex_avatar");
-                navigate("/");
-              }}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors"
-            >
-              <LogOut className="w-[14px] h-[14px]" />
+            {activeSidebar === "settings" && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-white/50 font-bold uppercase tracking-wider">
+                    Theme
+                  </label>
+                  <select className="bg-[#222] border border-white/10 rounded-lg p-2 text-sm text-white outline-none">
+                    <option>Dark Mode</option>
+                    <option>Light Mode</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-white/50 font-bold uppercase tracking-wider">
+                    Default Model
+                  </label>
+                  <select
+                    value={model}
+                    onChange={(e) => setModel(e.target.value as any)}
+                    className="bg-[#222] border border-white/10 rounded-lg p-2 text-sm text-white outline-none"
+                  >
+                    <option>Gemini Pro</option>
+                    <option>OpenAI GPT-4</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col relative z-0">
+        {/* Header */}
+        <header className="h-[70px] flex items-center justify-between px-6 z-10 w-full">
+          {/* Left Header */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-6 h-6"
+              >
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 12 12 17 22 12" />
+                <polyline points="2 17 12 22 22 17" />
+              </svg>
+            </div>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/80 tracking-wide">
+              beta
+            </span>
+            <span className="font-semibold text-[15px] text-white">Apex</span>
+          </div>
+
+          {/* Right Header */}
+          <div className="flex items-center gap-4">
+            <button className="bg-[#1fc66d] hover:bg-[#1bb363] text-white font-medium px-4 py-1.5 rounded-lg text-sm transition-colors tracking-wide">
+              Store Purchases
+            </button>
+            <button className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+              <Moon className="w-4 h-4" />
             </button>
 
-            <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center cursor-pointer overflow-hidden border border-white/10">
-              <img
-                src={userAvatar}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-full bg-black flex items-center justify-center cursor-pointer overflow-hidden border border-white/10"
+                onClick={() => {
+                  if (!username) {
+                    navigate("/sign-in");
+                  }
+                }}
+              >
+                {username ? (
+                  <img
+                    src={userAvatar}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#111] flex items-center justify-center text-xs">
+                    ?
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 z-10 w-full max-w-[700px] mx-auto mt-[-5vh]">
-          <div className="w-16 h-16 rounded-3xl border border-white/10 bg-[#111111] flex items-center justify-center mb-8 shadow-2xl">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-8 h-8"
-            >
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" />
-              <path d="M2 17L12 22L22 17" />
-              <path d="M2 12L12 17L22 12" />
-            </svg>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 z-10 w-full max-w-[850px] mx-auto mt-[-5vh] relative">
+          <div className="flex flex-col items-center justify-center mb-10">
+            <div className="flex items-center justify-center gap-6 mb-4">
+              {/* Logo Mark */}
+              <div className="w-[80px] h-[80px] text-white flex items-center justify-center rounded-3xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-12 h-12"
+                >
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                  <polyline points="2 12 12 17 22 12" />
+                  <polyline points="2 17 12 22 22 17" />
+                </svg>
+              </div>
+
+              <h1 className="text-[72px] font-extrabold tracking-tight text-white leading-none uppercase">
+                Apex
+              </h1>
+            </div>
+            <p className="text-[18px] text-white/50 font-medium tracking-wide">
+              What do you want to build?
+            </p>
           </div>
 
-          <h1 className="text-[28px] md:text-[32px] font-semibold mb-8 tracking-tight text-white text-center">
-            How can I help you build{" "}
-            <span className="font-serif italic text-white/90 font-bold">
-              today?
-            </span>
-          </h1>
+          <div className="w-full relative flex flex-col gap-4 max-w-[700px] mx-auto">
+            {/* Input Box Area */}
+            <div className="flex-1 w-full flex flex-col gap-2">
+              <div className="bg-[#111111] border border-white/10 rounded-2xl p-3 flex flex-col focus-within:border-white/30 focus-within:bg-[#151515] transition-all shadow-xl min-h-[140px]">
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Describe your game idea..."
+                  className="w-full bg-transparent border-none outline-none text-white placeholder-white/30 text-[16px] resize-none h-[60px] p-2 font-medium"
+                />
 
-          <div className="w-full relative">
-            <div className="flex items-center gap-1 bg-[#1a1a1a] p-1 rounded-xl mb-4 w-fit mx-auto shadow-lg border border-white/5">
-              <button
-                onClick={() => setModel("gemini")}
-                className={`px-4 py-1.5 text-[13px] font-medium rounded-lg transition-all flex items-center gap-2 ${model === "gemini" ? "bg-[#333333] text-white shadow-sm" : "text-white/50 hover:text-white/80"}`}
-              >
-                <span className="text-white/80">✧</span> Gemini
-              </button>
-              <button
-                onClick={() => setModel("openai")}
-                className={`px-4 py-1.5 text-[13px] font-medium rounded-lg transition-all flex items-center gap-2 ${model === "openai" ? "bg-[#333333] text-white shadow-sm" : "text-white/50 hover:text-white/80"}`}
-              >
-                <span className="text-white/80">◎</span> OpenAI
-              </button>
+                <div className="flex items-center justify-between mt-auto px-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white/50 text-xs font-semibold hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4" /> Add Assets
+                    </button>
+                    <input
+                      type="file"
+                      hidden
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      multiple
+                      accept="image/*"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="relative group/model">
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white/60 text-xs font-semibold hover:text-white hover:bg-white/5 transition-colors">
+                        Model:{" "}
+                        <span className="font-bold text-white">{model}</span>{" "}
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="absolute right-0 bottom-full mb-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl opacity-0 group-hover/model:opacity-100 transition-opacity pointer-events-none group-hover/model:pointer-events-auto z-50">
+                        <button
+                          onClick={() => setModel("Gemini Pro")}
+                          className="w-full text-left px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors first:rounded-t-lg"
+                        >
+                          Gemini Pro
+                        </button>
+                        <button
+                          onClick={() => setModel("OpenAI GPT-4")}
+                          className="w-full text-left px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors last:rounded-b-lg"
+                        >
+                          OpenAI GPT-4
+                        </button>
+                      </div>
+                    </div>
+                    <button className="w-10 h-10 rounded-xl bg-white border border-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors ml-1 shadow-lg">
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl flex items-center overflow-hidden focus-within:ring-1 focus-within:ring-white/20 transition-all shadow-2xl min-h-[56px] relative">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Message Apex AI..."
-                className="flex-1 bg-transparent border-none outline-none py-4 px-5 text-white placeholder-white/40 text-[15px]"
-              />
-              <button className="mr-3 w-8 h-8 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center text-black transition-colors shadow-lg flex-shrink-0">
-                <ArrowUpRight className="w-[18px] h-[18px]" />
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+              <button className="bg-[#111] border border-white/10 hover:border-white/20 hover:bg-[#1a1a1a] text-white/70 rounded-full px-5 py-2.5 text-[13px] flex items-center gap-2 transition-all">
+                🤺 Make a combat system
+              </button>
+              <button className="bg-[#111] border border-white/10 hover:border-white/20 hover:bg-[#1a1a1a] text-white/70 rounded-full px-5 py-2.5 text-[13px] flex items-center gap-2 transition-all">
+                🗺️ Make a plot system
+              </button>
+              <button className="bg-[#111] border border-white/10 hover:border-white/20 hover:bg-[#1a1a1a] text-white/70 rounded-full px-5 py-2.5 text-[13px] flex items-center gap-2 transition-all">
+                🔁 Make a round system
               </button>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
-            <button className="bg-[#1a1a1a] border border-white/5 hover:border-white/10 hover:bg-[#222222] text-white/70 rounded-full px-5 py-2.5 text-[13px] flex items-center gap-2 transition-all">
-              <span className="text-base">🤺</span> Make a combat system
-            </button>
-            <button className="bg-[#1a1a1a] border border-white/5 hover:border-white/10 hover:bg-[#222222] text-white/70 rounded-full px-5 py-2.5 text-[13px] flex items-center gap-2 transition-all">
-              <span className="text-base">🗺️</span> Make a plot system
-            </button>
-            <button className="bg-[#1a1a1a] border border-white/5 hover:border-white/10 hover:bg-[#222222] text-white/70 rounded-full px-5 py-2.5 text-[13px] flex items-center gap-2 transition-all">
-              <span className="text-base">🔁</span> Make a round system
-            </button>
           </div>
         </div>
       </main>

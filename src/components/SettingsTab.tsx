@@ -1,17 +1,47 @@
 import { useState, useEffect } from "react";
-import { Key, User, Shield, Info, Copy, Check, Eye, EyeOff, Blocks, HelpCircle, Code } from "lucide-react";
+import {
+  Key,
+  User,
+  Shield,
+  Info,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  Blocks,
+  HelpCircle,
+  Code,
+} from "lucide-react";
 
 interface SettingsTabProps {
-  onSettingsChange: (settings: { username: string; nickname: string; avatar: string; openaiKey: string; geminiKey: string }) => void;
+  onSettingsChange: (settings: {
+    username: string;
+    nickname: string;
+    avatar: string;
+    openaiKey: string;
+    geminiKey: string;
+  }) => void;
 }
 
 export default function SettingsTab({ onSettingsChange }: SettingsTabProps) {
   // Load initial states from localStorage or defaults
-  const [nickname, setNickname] = useState(() => localStorage.getItem("apex_nickname") || "Apex Developer");
-  const [username, setUsername] = useState(() => localStorage.getItem("apex_username") || "RobloxianDev_01");
-  const [avatar, setAvatar] = useState(() => localStorage.getItem("apex_avatar") || "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527");
-  const [openaiKey, setOpenaiKey] = useState(() => localStorage.getItem("apex_openai_key") || "");
-  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem("apex_gemini_key") || "");
+  const [nickname, setNickname] = useState(
+    () => localStorage.getItem("apex_nickname") || "Apex Developer",
+  );
+  const [username, setUsername] = useState(
+    () => localStorage.getItem("apex_username") || "RobloxianDev_01",
+  );
+  const [avatar, setAvatar] = useState(
+    () =>
+      localStorage.getItem("apex_avatar") ||
+      "https://api.dicebear.com/7.x/avataaars/svg?seed=RobloxDev&backgroundColor=232527",
+  );
+  const [openaiKey, setOpenaiKey] = useState(
+    () => localStorage.getItem("apex_openai_key") || "",
+  );
+  const [geminiKey, setGeminiKey] = useState(
+    () => localStorage.getItem("apex_gemini_key") || "",
+  );
 
   const [showOpenai, setShowOpenai] = useState(false);
   const [showGemini, setShowGemini] = useState(false);
@@ -20,13 +50,13 @@ export default function SettingsTab({ onSettingsChange }: SettingsTabProps) {
   const [saveStatus, setSaveStatus] = useState("");
 
   const [hostUrl, setHostUrl] = useState(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const origin = window.location.origin;
       if (
-        origin.includes("localhost") || 
-        origin.includes("3000") || 
-        origin.includes("127.0.0.1") || 
-        origin.includes(".run.app") || 
+        origin.includes("localhost") ||
+        origin.includes("3000") ||
+        origin.includes("127.0.0.1") ||
+        origin.includes(".run.app") ||
         origin.includes("google.com")
       ) {
         return "https://apex-rblx.vercel.app";
@@ -146,7 +176,7 @@ end)`;
       nickname,
       avatar,
       openaiKey,
-      geminiKey
+      geminiKey,
     });
 
     setSaveStatus("Settings saved successfully!");
@@ -161,11 +191,14 @@ end)`;
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar h-full w-full pr-1 space-y-6">
-      
       {/* Title block */}
       <div className="flex flex-col gap-1.5 select-none">
-        <h3 className="text-xl font-black uppercase tracking-wider text-white">Engine Settings</h3>
-        <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold">Configure workspace keys and customize profile parameters</p>
+        <h3 className="text-xl font-black uppercase tracking-wider text-white">
+          Engine Settings
+        </h3>
+        <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold">
+          Configure workspace keys and customize profile parameters
+        </p>
       </div>
 
       {saveStatus && (
@@ -175,10 +208,8 @@ end)`;
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
-        
         {/* Left Column - Core Configurations */}
         <div className="space-y-6">
-          
           {/* OpenAI Key customization */}
           <div className="bg-[#08080a] border border-white/5 rounded-2xl p-6 space-y-4">
             <h4 className="font-extrabold text-[12px] uppercase tracking-wider text-white/80 flex items-center gap-2 border-b border-white/5 pb-3">
@@ -187,7 +218,9 @@ end)`;
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">OpenAI API Key (Custom Override)</label>
+                <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">
+                  OpenAI API Key (Custom Override)
+                </label>
                 <div className="relative">
                   <input
                     type={showOpenai ? "text" : "password"}
@@ -196,20 +229,27 @@ end)`;
                     placeholder="sk-proj-..."
                     className="w-full bg-[#111] hover:bg-[#151515] focus:bg-[#151515] border border-white/10 hover:border-white/20 focus:border-white/30 rounded-xl px-4 py-3 text-xs text-white outline-none font-mono"
                   />
-                  <button 
-                    onClick={() => setShowOpenai(!showOpenai)} 
+                  <button
+                    onClick={() => setShowOpenai(!showOpenai)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
                   >
-                    {showOpenai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showOpenai ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 <p className="text-[10px] text-white/30 mt-1.5 leading-relaxed">
-                  Used directly for OpenAI GPT-4o queries. Kept securely offline in local browser cache.
+                  Used directly for OpenAI GPT-4o queries. Kept securely offline
+                  in local browser cache.
                 </p>
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">Gemini API Key (Optional)</label>
+                <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">
+                  Gemini API Key (Optional)
+                </label>
                 <div className="relative">
                   <input
                     type={showGemini ? "text" : "password"}
@@ -218,11 +258,15 @@ end)`;
                     placeholder="AIzaSy..."
                     className="w-full bg-[#111] hover:bg-[#151515] focus:bg-[#151515] border border-white/10 hover:border-white/20 focus:border-white/30 rounded-xl px-4 py-3 text-xs text-white outline-none font-mono"
                   />
-                  <button 
-                    onClick={() => setShowGemini(!showGemini)} 
+                  <button
+                    onClick={() => setShowGemini(!showGemini)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
                   >
-                    {showGemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showGemini ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -232,13 +276,16 @@ end)`;
           {/* Roblox Identity Configuration */}
           <div className="bg-[#08080a] border border-white/5 rounded-2xl p-6 space-y-4">
             <h4 className="font-extrabold text-[12px] uppercase tracking-wider text-white/80 flex items-center gap-2 border-b border-white/5 pb-3">
-              <User className="w-4 h-4 text-yellow-400" /> Roblox Identity Parameter
+              <User className="w-4 h-4 text-yellow-400" /> Roblox Identity
+              Parameter
             </h4>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">Display Nickname</label>
+                  <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">
+                    Display Nickname
+                  </label>
                   <input
                     type="text"
                     value={nickname}
@@ -248,7 +295,9 @@ end)`;
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">Public Username</label>
+                  <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">
+                    Public Username
+                  </label>
                   <input
                     type="text"
                     value={username}
@@ -260,7 +309,9 @@ end)`;
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">Profile Avatar URL</label>
+                <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">
+                  Profile Avatar URL
+                </label>
                 <input
                   type="text"
                   value={avatar}
@@ -271,10 +322,18 @@ end)`;
               </div>
 
               <div className="flex items-center gap-3.5 bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
-                <img src={avatar} alt="Avatar preview" className="w-12 h-12 rounded-full border border-white/15 object-cover bg-neutral-900" />
+                <img
+                  src={avatar}
+                  alt="Avatar preview"
+                  className="w-12 h-12 rounded-full border border-white/15 object-cover bg-neutral-900"
+                />
                 <div>
-                  <span className="block text-[13px] font-bold text-white">{nickname}</span>
-                  <span className="block text-[10px] font-mono text-white/40">@{username}</span>
+                  <span className="block text-[13px] font-bold text-white">
+                    {nickname}
+                  </span>
+                  <span className="block text-[10px] font-mono text-white/40">
+                    @{username}
+                  </span>
                 </div>
               </div>
             </div>
@@ -287,35 +346,64 @@ end)`;
           >
             Save All Changes
           </button>
-
         </div>
 
         {/* Right Column - Create Your Custom Roblox Plugin Instructions & Source Code */}
         <div className="bg-[#08080a] border border-white/5 rounded-2xl p-6 flex flex-col justify-between">
           <div className="space-y-4">
             <h4 className="font-extrabold text-[12px] uppercase tracking-wider text-white/80 flex items-center gap-2 border-b border-white/5 pb-3">
-              <Blocks className="w-4 h-4 text-emerald-400" /> Roblox Studio Custom Plugin
+              <Blocks className="w-4 h-4 text-emerald-400" /> Roblox Studio
+              Custom Plugin
             </h4>
 
             <div className="text-white/60 text-xs leading-relaxed space-y-2">
               <p>
-                To trigger Roblox workspace script generation in real-time right from this website, you can create and deploy <strong className="text-emerald-400">your own custom Roblox Plugin</strong> using our source code!
+                To trigger Roblox workspace script generation in real-time right
+                from this website, you can create and deploy{" "}
+                <strong className="text-emerald-400">
+                  your own custom Roblox Plugin
+                </strong>{" "}
+                using our source code!
               </p>
-              
+
               <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-[11px] space-y-2 select-none">
-                <span className="font-extrabold text-white block uppercase tracking-wider text-[9px] text-yellow-400">Installation Helper:</span>
+                <span className="font-extrabold text-white block uppercase tracking-wider text-[9px] text-yellow-400">
+                  Installation Helper:
+                </span>
                 <ol className="list-decimal pl-4 space-y-1 text-white/50">
-                  <li>In <strong>Roblox Studio</strong>, open any game project space.</li>
-                  <li>In the <strong>Explorer window</strong>, create a standard <code className="text-white">Script</code>.</li>
-                  <li>Copy and paste our custom plugin code block below into it.</li>
-                  <li>Right-click the Script and select <strong className="text-white">"Save as Local Plugin"</strong>!</li>
-                  <li>Select your local plugin directory. Call it <code className="text-emerald-400 font-bold">ApexAI.local.lua</code> and hit Save!</li>
+                  <li>
+                    In <strong>Roblox Studio</strong>, open any game project
+                    space.
+                  </li>
+                  <li>
+                    In the <strong>Explorer window</strong>, create a standard{" "}
+                    <code className="text-white">Script</code>.
+                  </li>
+                  <li>
+                    Copy and paste our custom plugin code block below into it.
+                  </li>
+                  <li>
+                    Right-click the Script and select{" "}
+                    <strong className="text-white">
+                      "Save as Local Plugin"
+                    </strong>
+                    !
+                  </li>
+                  <li>
+                    Select your local plugin directory. Call it{" "}
+                    <code className="text-emerald-400 font-bold">
+                      ApexAI.local.lua
+                    </code>{" "}
+                    and hit Save!
+                  </li>
                 </ol>
               </div>
 
               {/* Editable Host URL configuration */}
               <div className="bg-[#111] hover:bg-[#131315] border border-white/5 rounded-xl p-3.5 space-y-2 transition-colors">
-                <label className="block text-[9px] uppercase tracking-widest font-black text-emerald-400">Plugin Server Connection endpoint</label>
+                <label className="block text-[9px] uppercase tracking-widest font-black text-emerald-400">
+                  Plugin Server Connection endpoint
+                </label>
                 <input
                   type="text"
                   value={hostUrl}
@@ -324,38 +412,46 @@ end)`;
                   className="w-full bg-black hover:bg-neutral-900 border border-white/10 focus:border-emerald-500/50 rounded-lg px-3 py-2 text-xs text-white outline-none font-mono"
                 />
                 <span className="block text-[9px] text-white/30 leading-normal font-semibold">
-                  The Roblox local plugin uses this web API origin. Modify it above to point to a local development process or private hosting endpoint instantly.
+                  The Roblox local plugin uses this web API origin. Modify it
+                  above to point to a local development process or private
+                  hosting endpoint instantly.
                 </span>
               </div>
             </div>
 
             <div className="relative mt-4">
-              <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">Custom Plugin Source Code</label>
-              
+              <label className="block text-[10px] uppercase tracking-widest font-extrabold text-white/40 mb-1.5">
+                Custom Plugin Source Code
+              </label>
+
               <div className="relative rounded-xl border border-white/10 bg-[#050507] overflow-hidden">
-                <button 
-                  onClick={handleCopyCode} 
+                <button
+                  onClick={handleCopyCode}
                   className="absolute right-3.5 top-3.5 p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-all cursor-pointer z-10"
                   title="Copy Code"
                 >
-                  {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-white/60" />}
+                  {copiedCode ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-white/60" />
+                  )}
                 </button>
-                
+
                 <pre className="p-4 pr-14 text-[10px] font-mono text-[#a5d6ff] h-60 overflow-y-auto custom-scrollbar select-all leading-relaxed bg-[#050507]">
                   <code>{customPluginCode}</code>
                 </pre>
               </div>
             </div>
           </div>
-          
+
           <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-white/30 flex items-center gap-1.5 select-none font-semibold uppercase tracking-wider">
             <Info className="w-3.5 h-3.5 text-neutral-500" />
-            <span>Plugin fully compatible with default Luau Studio sockets</span>
+            <span>
+              Plugin fully compatible with default Luau Studio sockets
+            </span>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }

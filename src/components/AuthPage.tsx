@@ -2,6 +2,30 @@ import { useState } from "react";
 import { ArrowLeft, ChevronDown, Blocks } from "lucide-react";
 import { motion } from "motion/react";
 
+// PKCE helper
+function generateRandomString(length: number) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  let result = "";
+  const randomValues = new Uint8Array(length);
+  window.crypto.getRandomValues(randomValues);
+  for (let i = 0; i < length; i++) {
+    result += chars[randomValues[i] % chars.length];
+  }
+  return result;
+}
+
+async function generateCodeChallenge(codeVerifier: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
+
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
 export default function AuthPage({
   onLogin,
   onBack,
@@ -14,21 +38,26 @@ export default function AuthPage({
 
   // Custom credentials inputs
   const clientId = "1434336652378086576";
-  const redirectUri = "https://apex-rblx.vercel.app/dashboard";
+  const redirectUri = window.location.origin + "/dashboard";
   const oauthState = "5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb";
   const scopes = "openid profile";
 
-  const handleOauth = () => {
+  const handleOauth = async () => {
     setIsConnecting(true);
+
+    const codeVerifier = generateRandomString(128);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+    localStorage.setItem("apex_code_verifier", codeVerifier);
 
     // Generate URL dynamically with user-defined client details
     const encodedRedirect = encodeURIComponent(redirectUri);
     const encodedState = encodeURIComponent(oauthState);
     const encodedScopes = encodeURIComponent(scopes);
-    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&step=accountConfirm`;
+    const encodedChallenge = encodeURIComponent(codeChallenge);
+    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&code_challenge=${encodedChallenge}&code_challenge_method=S256&step=accountConfirm`;
 
-    // Open in a new tab to avoid iframe security constraints (X-Frame-Options)
-    window.open(authUrl, '_blank');
+    window.open(authUrl, "_blank");
     setIsConnecting(false);
   };
 
@@ -91,8 +120,20 @@ export default function AuthPage({
           <div className="w-full border border-white/10 rounded-[24px] overflow-hidden bg-white/5 backdrop-blur-md mt-4">
             <div className="p-10 flex items-center justify-center relative backdrop-blur-3xl bg-black/20">
               <div className="flex items-center justify-center w-full max-w-[280px]">
-                <div className="w-[64px] h-[64px] rounded-full bg-white/5 flex items-center justify-center shrink-0 z-10 border border-white/20 shadow-xl backdrop-blur-md">
-                  <Blocks className="w-8 h-8 text-white drop-shadow-md" />
+                <div className="w-[64px] h-[64px] rounded-full bg-white/5 flex items-center justify-center shrink-0 z-10 border border-white/20 shadow-xl backdrop-blur-md text-white">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-8 h-8 drop-shadow-md"
+                  >
+                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                    <polyline points="2 12 12 17 22 12" />
+                    <polyline points="2 17 12 22 22 17" />
+                  </svg>
                 </div>
                 <div className="flex-1 h-[2px] bg-gradient-to-r from-white/10 via-white/50 to-white/10 relative -mx-2 z-0"></div>
                 <div className="w-[64px] h-[64px] rounded-full bg-white/5 shrink-0 z-10 overflow-hidden border border-white/20 shadow-xl backdrop-blur-md flex items-center justify-center">

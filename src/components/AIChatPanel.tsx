@@ -25,11 +25,11 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prompt, 
-          aiModel: provider, 
-          customOpenAiKey, 
-          customGeminiKey 
+        body: JSON.stringify({
+          prompt,
+          aiModel: provider,
+          customOpenAiKey,
+          customGeminiKey,
         }),
       });
 
@@ -67,7 +67,9 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
               onClick={() => setProvider("gemini")}
               className={cn(
                 "px-5 py-2 rounded-full text-xs font-bold transition-all uppercase tracking-wider",
-                provider === "gemini" ? "bg-white/10 shadow-lg text-white border border-white/10" : "text-white/30 hover:text-white/60 hover:bg-white/5"
+                provider === "gemini"
+                  ? "bg-white/10 shadow-lg text-white border border-white/10"
+                  : "text-white/30 hover:text-white/60 hover:bg-white/5",
               )}
             >
               Gemini 2.5
@@ -76,7 +78,9 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
               onClick={() => setProvider("openai")}
               className={cn(
                 "px-5 py-2 rounded-full text-xs font-bold transition-all uppercase tracking-wider",
-                provider === "openai" ? "bg-white/10 shadow-lg text-white border border-white/10" : "text-white/30 hover:text-white/60 hover:bg-white/5"
+                provider === "openai"
+                  ? "bg-white/10 shadow-lg text-white border border-white/10"
+                  : "text-white/30 hover:text-white/60 hover:bg-white/5",
               )}
             >
               GPT-4o
@@ -89,32 +93,50 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
         <div className="space-y-4">
           {/* Example Prompts */}
           <div className="flex flex-col gap-3 pt-4">
-            <span className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mb-1">Architecture Blueprints</span>
-            <button 
-              onClick={() => setPrompt("Create a round-based mini-game loop with a lobby system, keeping state in ServerStorage.")}
+            <span className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mb-1">
+              Architecture Blueprints
+            </span>
+            <button
+              onClick={() =>
+                setPrompt(
+                  "Create a round-based mini-game loop with a lobby system, keeping state in ServerStorage.",
+                )
+              }
               className="group/btn text-left px-5 py-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-2xl text-sm font-medium text-white/60 hover:text-white/90 transition-all shadow-md flex items-center justify-between"
             >
-              <span>Create a round-based mini-game loop with a lobby system</span>
+              <span>
+                Create a round-based mini-game loop with a lobby system
+              </span>
               <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                 <Send className="w-3 h-3 text-white/50" />
+                <Send className="w-3 h-3 text-white/50" />
               </div>
             </button>
-            <button 
-              onClick={() => setPrompt("Make a working dash mechanic with stamina UI updates.")}
+            <button
+              onClick={() =>
+                setPrompt(
+                  "Make a working dash mechanic with stamina UI updates.",
+                )
+              }
               className="group/btn text-left px-5 py-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-2xl text-sm font-medium text-white/60 hover:text-white/90 transition-all shadow-md flex items-center justify-between"
             >
               <span>Make a working dash mechanic with stamina UI updates</span>
               <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                 <Send className="w-3 h-3 text-white/50" />
+                <Send className="w-3 h-3 text-white/50" />
               </div>
             </button>
-            <button 
-              onClick={() => setPrompt("Create a server script that saves player gold to a Datastore on exit.")}
+            <button
+              onClick={() =>
+                setPrompt(
+                  "Create a server script that saves player gold to a Datastore on exit.",
+                )
+              }
               className="group/btn text-left px-5 py-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-2xl text-sm font-medium text-white/60 hover:text-white/90 transition-all shadow-md flex items-center justify-between"
             >
-              <span>Create a server script that saves player gold to a Datastore</span>
+              <span>
+                Create a server script that saves player gold to a Datastore
+              </span>
               <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover/btn:opacity-100 transition-opacity">
-                 <Send className="w-3 h-3 text-white/50" />
+                <Send className="w-3 h-3 text-white/50" />
               </div>
             </button>
           </div>
@@ -122,17 +144,24 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
       </div>
 
       <div className="p-5 bg-gradient-to-b from-transparent to-black/80 relative z-10">
-        <form onSubmit={handleGenerate} className="relative flex items-center group/form">
+        <form
+          onSubmit={handleGenerate}
+          className="relative flex items-center group/form"
+        >
           {/* Inner Glow effect on hover */}
           <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover/form:opacity-100 blur-xl transition-opacity duration-500 pointer-events-none rounded-[2rem]" />
-          
+
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={connected ? "Describe the mechanic (Will inject to Studio)..." : "Specify the system architecture..."}
+            placeholder={
+              connected
+                ? "Describe the mechanic (Will inject to Studio)..."
+                : "Specify the system architecture..."
+            }
             className="w-full resize-none min-h-[64px] max-h-40 bg-[#111] hover:bg-[#151515] focus:bg-[#151515] border border-white/10 hover:border-white/20 focus:border-white/30 rounded-[2rem] py-4 pl-6 pr-16 text-[15px] font-medium text-white placeholder-white/30 outline-none transition-all custom-scrollbar shadow-inner"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleGenerate();
               }
@@ -143,7 +172,11 @@ export default function AIChatPanel({ onGenerated, connected }: ChatProps) {
             disabled={!prompt.trim() || loading}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-white text-black hover:bg-gray-200 disabled:bg-white/10 disabled:text-white/30 rounded-full transition-all hover:scale-110 active:scale-95 shadow-xl"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </form>
       </div>
