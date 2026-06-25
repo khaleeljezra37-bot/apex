@@ -40,12 +40,6 @@ export default function LandingPage() {
           <Link to="/privacy-policy" className="hidden lg:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Privacy</Link>
           <Link to="/terms-of-service" className="hidden lg:block text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Terms</Link>
           <button onClick={() => navigate('/sign-in')} className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Sign In</button>
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="hidden sm:block px-6 py-2.5 bg-white text-black hover:bg-gray-200 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-          >
-            Open Dashboard
-          </button>
         </div>
       </nav>
 

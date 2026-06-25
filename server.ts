@@ -10,6 +10,17 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Serve custom Apex favicon svg directly from the server
+  app.get("/favicon.ico", (req, res) => {
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7L12 12L22 7L12 2Z"/><path d="M2 17L12 22L22 17"/><path d="M2 12L12 17L22 12"/></svg>`);
+  });
+
+  app.get("/favicon.svg", (req, res) => {
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7L12 12L22 7L12 2Z"/><path d="M2 17L12 22L22 17"/><path d="M2 12L12 17L22 12"/></svg>`);
+  });
+
   // API constraints check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
