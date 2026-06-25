@@ -32,7 +32,7 @@ export default function App() {
               grant_type: "authorization_code",
               code: code,
               code_verifier: codeVerifier,
-              redirect_uri: window.location.origin + "/dashboard",
+              redirect_uri: "https://apex-rblx.vercel.app/dashboard",
             }),
           });
 

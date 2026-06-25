@@ -38,7 +38,7 @@ export default function AuthPage({
 
   // Custom credentials inputs
   const clientId = "1434336652378086576";
-  const redirectUri = window.location.origin + "/dashboard";
+  const redirectUri = "https://apex-rblx.vercel.app/dashboard";
   const oauthState = "5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb";
   const scopes = "openid profile";
 
