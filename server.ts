@@ -67,6 +67,22 @@ async function startServer() {
       );
 
       const data = await response.json();
+
+      // Fetch avatar if we have the user ID (sub)
+      if (data.sub) {
+        try {
+          const thumbRes = await fetch(
+            `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${data.sub}&size=420x420&format=Png&isCircular=true`,
+          );
+          const thumbData = await thumbRes.json();
+          if (thumbData?.data?.[0]?.imageUrl) {
+            data.picture = thumbData.data[0].imageUrl;
+          }
+        } catch (e) {
+          console.error("Failed to fetch Roblox thumbnail:", e);
+        }
+      }
+
       res.status(response.status).json(data);
     } catch (error: any) {
       console.error("Roblox User Info Error:", error);
@@ -89,12 +105,10 @@ async function startServer() {
       if (aiModel === "openai") {
         const apiKey = customOpenAiKey || process.env.OPENAI_API_KEY;
         if (!apiKey) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "OpenAI API key is missing. Please configure it in Settings.",
-            });
+          return res.status(400).json({
+            error:
+              "OpenAI API key is missing. Please configure it in Settings.",
+          });
         }
         const openai = new OpenAI({ apiKey });
         const completion = await openai.chat.completions.create({
@@ -113,12 +127,10 @@ async function startServer() {
       } else {
         const apiKey = customGeminiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "Gemini API key is missing. Please configure it in Settings.",
-            });
+          return res.status(400).json({
+            error:
+              "Gemini API key is missing. Please configure it in Settings.",
+          });
         }
         const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
