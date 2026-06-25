@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/auth/roblox/token",
+      "destination": "https://apis.roblox.com/oauth/v1/token"
+    },
+    {
+      "source": "/api/auth/roblox/userinfo",
+      "destination": "https://apis.roblox.com/oauth/v1/userinfo"
+    },
+    {
+      "source": "/api/auth/roblox/avatar/:sub",
+      "destination": "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=:sub&size=420x420&format=Png&isCircular=true"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -52,11 +52,23 @@ export default function App() {
                 "apex_username",
                 userData.preferred_username,
               );
-              localStorage.setItem(
-                "apex_avatar",
-                userData.picture ||
-                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.preferred_username}&backgroundColor=232527`,
-              );
+              
+              // Fetch avatar if we have the user ID (sub)
+              let avatarUrl = userData.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.preferred_username}&backgroundColor=232527`;
+              
+              if (userData.sub && (!userData.picture || !userData.picture.includes("roblox.com"))) {
+                try {
+                  const thumbRes = await fetch(`/api/auth/roblox/avatar/${userData.sub}`);
+                  const thumbData = await thumbRes.json();
+                  if (thumbData?.data?.[0]?.imageUrl) {
+                    avatarUrl = thumbData.data[0].imageUrl;
+                  }
+                } catch (e) {
+                  console.error("Failed to fetch Roblox thumbnail:", e);
+                }
+              }
+
+              localStorage.setItem("apex_avatar", avatarUrl);
               setAuthKey((k) => k + 1);
             }
           }

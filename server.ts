@@ -30,6 +30,20 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Proxy for Roblox Avatar Fetch
+  app.get("/api/auth/roblox/avatar/:sub", async (req, res) => {
+    try {
+      const response = await fetch(
+        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${req.params.sub}&size=420x420&format=Png&isCircular=true`
+      );
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Avatar fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch avatar" });
+    }
+  });
+
   // Proxy for Roblox OAuth Token Exchange
   app.post("/api/auth/roblox/token", async (req, res) => {
     try {
