@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import ChatWorkspace from "./components/ChatWorkspace";
 import LandingPage from "./components/LandingPage";
@@ -7,6 +7,8 @@ import LegalPage from "./components/LegalPage";
 
 export default function App() {
   const [isExchanging, setIsExchanging] = useState(false);
+  const [authKey, setAuthKey] = useState(0);
+  const exchangeStarted = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,7 +16,8 @@ export default function App() {
     const params = new URLSearchParams(location.search);
     const code = params.get("code");
 
-    if (code && !isExchanging) {
+    if (code && !exchangeStarted.current) {
+      exchangeStarted.current = true;
       setIsExchanging(true);
 
       const exchangeToken = async () => {
@@ -54,30 +57,20 @@ export default function App() {
                 userData.picture ||
                   `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.preferred_username}&backgroundColor=232527`,
               );
+              setAuthKey((k) => k + 1);
             }
           }
         } catch (e) {
           console.error("Token exchange failed:", e);
         } finally {
           setIsExchanging(false);
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname,
-          );
-          // Only navigate if we're not already on the dashboard to avoid extra re-renders
-          if (location.pathname !== "/dashboard") {
-            navigate("/dashboard", { replace: true });
-          } else {
-            // Force a reload so the dashboard picks up the new localStorage items
-            window.location.reload();
-          }
+          navigate("/dashboard", { replace: true });
         }
       };
 
       exchangeToken();
     }
-  }, [location.search, navigate, isExchanging]);
+  }, [location.search, navigate]);
 
   if (isExchanging) {
     return (
@@ -106,7 +99,7 @@ export default function App() {
           />
         }
       />
-      <Route path="/dashboard" element={<ChatWorkspace />} />
+      <Route path="/dashboard" element={<ChatWorkspace key={authKey} />} />
       <Route path="/privacy-policy" element={<LegalPage page="privacy" />} />
       <Route path="/terms-of-service" element={<LegalPage page="terms" />} />
     </Routes>
