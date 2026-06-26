@@ -56,9 +56,9 @@ export default function App() {
               // Fetch avatar if we have the user ID (sub)
               let avatarUrl = userData.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.preferred_username}&backgroundColor=232527`;
               
-              if (userData.sub && (!userData.picture || !userData.picture.includes("roblox.com"))) {
+              if (userData.sub) {
                 try {
-                  const thumbRes = await fetch(`/api/auth/roblox/avatar?userIds=${userData.sub}&size=420x420&format=Png&isCircular=true`);
+                  const thumbRes = await fetch(`/api/auth/roblox/avatar/${userData.sub}`);
                   const thumbData = await thumbRes.json();
                   if (thumbData?.data?.[0]?.imageUrl) {
                     avatarUrl = thumbData.data[0].imageUrl;

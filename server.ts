@@ -32,10 +32,10 @@ async function startServer() {
   });
 
   // Proxy for Roblox Avatar Fetch
-  app.get("/api/auth/roblox/avatar", async (req, res) => {
+  app.get("/api/auth/roblox/avatar/:sub", async (req, res) => {
     try {
       const response = await fetch(
-        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${req.query.userIds}&size=420x420&format=Png&isCircular=true`
+        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${req.params.sub}&size=420x420&format=Png&isCircular=true`
       );
       const data = await response.json();
       res.json(data);
