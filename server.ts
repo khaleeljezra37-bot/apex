@@ -31,7 +31,45 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  // Proxy for Roblox Avatar Fetch
+  // Proxies for direct API integration without Vercel rewrites (local dev)
+  app.post("/api/proxy/roblox/usernames", async (req, res) => {
+    try {
+      const response = await fetch("https://users.roblox.com/v1/usernames/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body)
+      });
+      const data = await response.json();
+      res.json(data);
+    } catch (e) {
+      res.status(500).json({ error: "Failed" });
+    }
+  });
+
+  app.get("/api/proxy/roblox/search", async (req, res) => {
+    try {
+      const keyword = req.query.keyword;
+      const response = await fetch(`https://users.roblox.com/v1/users/search?keyword=${keyword}&limit=10`);
+      const data = await response.json();
+      res.json(data);
+    } catch (e) {
+      res.status(500).json({ error: "Failed" });
+    }
+  });
+
+  app.get("/api/proxy/roblox/avatar/:sub", async (req, res) => {
+    try {
+      const response = await fetch(
+        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${req.params.sub}&size=420x420&format=Png&isCircular=true`
+      );
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch avatar" });
+    }
+  });
+
+  // Old routes
   app.get("/api/auth/roblox/avatar/:sub", async (req, res) => {
     try {
       const response = await fetch(
