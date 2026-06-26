@@ -9,8 +9,8 @@
       "destination": "https://apis.roblox.com/oauth/v1/userinfo"
     },
     {
-      "source": "/api/auth/roblox/avatar/:sub",
-      "destination": "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=:sub&size=420x420&format=Png&isCircular=true"
+      "source": "/api/auth/roblox/avatar",
+      "destination": "https://thumbnails.roblox.com/v1/users/avatar-headshot"
     },
     {
       "source": "/(.*)",

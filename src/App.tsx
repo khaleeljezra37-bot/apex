@@ -58,7 +58,7 @@ export default function App() {
               
               if (userData.sub && (!userData.picture || !userData.picture.includes("roblox.com"))) {
                 try {
-                  const thumbRes = await fetch(`/api/auth/roblox/avatar/${userData.sub}`);
+                  const thumbRes = await fetch(`/api/auth/roblox/avatar?userIds=${userData.sub}&size=420x420&format=Png&isCircular=true`);
                   const thumbData = await thumbRes.json();
                   if (thumbData?.data?.[0]?.imageUrl) {
                     avatarUrl = thumbData.data[0].imageUrl;
