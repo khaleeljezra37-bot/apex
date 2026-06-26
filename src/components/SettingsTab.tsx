@@ -143,21 +143,35 @@ syncBtn.MouseButton1Click:Connect(function()
     statusLabel.TextColor3 = Color3.fromRGB(251, 191, 36)
     
     local success, response = pcall(function()
-        return HttpService:GetAsync("${hostUrl}/api/health")
+        return HttpService:GetAsync("${hostUrl}/api/pull")
     end)
     
     if success then
-        -- SAFE BUILDING IMPLEMENTATION:
-        -- Instead of executing code remotely (which violates rules), we parse a JSON AST
-        -- Example safe creation:
-        -- local data = HttpService:JSONDecode(response)
-        -- for _, item in ipairs(data.instances) do
-        --    local inst = Instance.new(item.className)
-        --    inst.Parent = workspace
-        -- end
+        local data = HttpService:JSONDecode(response)
         
-        statusLabel.Text = "Success! JSON AST connection active. Fully Compliant."
-        statusLabel.TextColor3 = Color3.fromRGB(52, 211, 153)
+        if data.instances and #data.instances > 0 then
+            for _, item in ipairs(data.instances) do
+                local inst = Instance.new(item.className)
+                inst.Name = item.name
+                if item.className == "Script" or item.className == "LocalScript" or item.className == "ModuleScript" then
+                    inst.Source = item.source
+                end
+                
+                -- Determine parent based on requested parent name
+                local parentTarget = game:GetService("ServerScriptService")
+                if item.parent == "Workspace" then parentTarget = workspace
+                elseif item.parent == "StarterPlayerScripts" then parentTarget = game:GetService("StarterPlayer").StarterPlayerScripts
+                elseif item.parent == "ReplicatedStorage" then parentTarget = game:GetService("ReplicatedStorage")
+                end
+                
+                inst.Parent = parentTarget
+            end
+            statusLabel.Text = "Success! Applied " .. tostring(#data.instances) .. " AST instances."
+            statusLabel.TextColor3 = Color3.fromRGB(52, 211, 153)
+        else
+            statusLabel.Text = "Success! But no pending generations found."
+            statusLabel.TextColor3 = Color3.fromRGB(52, 211, 153)
+        end
     else
         statusLabel.Text = "Failed connects. Enable HttpEnabled in Game Settings."
         statusLabel.TextColor3 = Color3.fromRGB(244, 63, 94)

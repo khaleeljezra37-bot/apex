@@ -5,7 +5,6 @@ import {
   MessageSquare,
   Settings,
   Bot,
-  Compass,
   AtSign,
   Image as ImageIcon,
   ChevronDown,
@@ -82,16 +81,7 @@ export default function ChatWorkspace() {
             </div>
           </div>
 
-          <div className="relative group flex items-center">
-            <button
-              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors border text-white/50 hover:text-white hover:bg-white/5 border-transparent`}
-            >
-              <Compass className="w-5 h-5" />
-            </button>
-            <div className="absolute left-14 px-2 py-1 bg-[#1a1a1a] border border-white/10 text-white text-xs font-semibold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
-              Explore Features
-            </div>
-          </div>
+
         </div>
       </aside>
 

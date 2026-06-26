@@ -107,6 +107,8 @@ async function startServer() {
     }
   });
 
+  let latestGeneratedCode = "";
+
   // Main generation endpoint for game mechanics
   app.post("/api/generate", async (req, res) => {
     try {
@@ -160,12 +162,33 @@ async function startServer() {
         .replace(/^```[A-Za-z]*\n?/gm, "")
         .replace(/```$/gm, "");
 
+      latestGeneratedCode = generatedCode;
+
       return res.json({ code: generatedCode });
     } catch (error: any) {
       console.error("AI Generation Error:", error);
       return res
         .status(500)
         .json({ error: error.message || "Something went wrong" });
+    }
+  });
+
+  app.get("/api/pull", (req, res) => {
+    if (latestGeneratedCode) {
+      res.json({
+        instances: [
+          {
+            className: "Script",
+            name: "ApexGenerated",
+            source: latestGeneratedCode,
+            parent: "ServerScriptService"
+          }
+        ]
+      });
+      // Optional: clear it after pull so it doesn't get pulled twice?
+      // latestGeneratedCode = "";
+    } else {
+      res.json({ instances: [] });
     }
   });
 
