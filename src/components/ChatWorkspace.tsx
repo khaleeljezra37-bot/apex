@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Moon,
   MessageSquare,
@@ -25,6 +26,7 @@ export default function ChatWorkspace() {
   const [activeSidebar, setActiveSidebar] = useState<
     "history" | "settings" | null
   >(null);
+  const [onboardingStep, setOnboardingStep] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -36,13 +38,54 @@ export default function ChatWorkspace() {
   };
 
   useEffect(() => {
+    const checkOnboarding = () => {
+      const isCompleted = localStorage.getItem("apex_onboarding_completed");
+      if (!isCompleted) {
+        if (!username && !localStorage.getItem("apex_username")) {
+          setOnboardingStep(1);
+        } else {
+          setOnboardingStep(2);
+        }
+      } else {
+        setOnboardingStep(0);
+      }
+    };
+    const timer = setTimeout(checkOnboarding, 50);
+    return () => clearTimeout(timer);
+  }, [username]);
+
+  const dismissOnboarding = () => {
+    localStorage.setItem("apex_onboarding_completed", "true");
+    setOnboardingStep(0);
+  };
+
+  useEffect(() => {
     const avatar = localStorage.getItem("apex_avatar");
     const storedUsername = localStorage.getItem("apex_username");
-    if (avatar) {
-      setUserAvatar(avatar);
-    }
+    
     if (storedUsername) {
       setUsername(storedUsername);
+    }
+
+    if (avatar && !avatar.includes("dicebear.com")) {
+      setUserAvatar(avatar);
+    } else if (storedUsername) {
+      // Proactively try to fetch real avatar if currently using dicebear or missing
+      fetch(`/api/auth/roblox/avatar-by-username/${storedUsername}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data?.data?.[0]?.imageUrl) {
+            const realAvatar = data.data[0].imageUrl;
+            setUserAvatar(realAvatar);
+            localStorage.setItem("apex_avatar", realAvatar);
+          } else if (avatar) {
+            setUserAvatar(avatar);
+          }
+        })
+        .catch(err => {
+          console.error("Auto-fetch avatar error:", err);
+          if (avatar) setUserAvatar(avatar);
+        });
     }
   }, []);
 
@@ -193,9 +236,9 @@ export default function ChatWorkspace() {
               <Moon className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
               <div
-                className="w-8 h-8 rounded-full bg-black flex items-center justify-center cursor-pointer overflow-hidden border border-white/10"
+                className="w-8 h-8 rounded-full bg-black flex items-center justify-center cursor-pointer overflow-hidden border border-white/10 relative z-10"
                 onClick={() => {
                   if (!username) {
                     navigate("/sign-in");
@@ -214,6 +257,27 @@ export default function ChatWorkspace() {
                   </div>
                 )}
               </div>
+              <AnimatePresence>
+                {onboardingStep === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="absolute top-[calc(100%+16px)] right-0 w-64 bg-[#111] border border-emerald-500/30 rounded-xl p-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] z-50 flex flex-col gap-2"
+                  >
+                    <div className="absolute -top-2 right-3 w-4 h-4 bg-[#111] border-l border-t border-emerald-500/30 rotate-45"></div>
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="text-emerald-400 font-bold text-sm">Step 1: Connect Roblox</h3>
+                      <button onClick={dismissOnboarding} className="text-white/40 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-white/70 leading-relaxed relative z-10">
+                      Sign in to your account to securely sync your Avatar and prepare your workspace.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
@@ -250,8 +314,8 @@ export default function ChatWorkspace() {
 
           <div className="w-full relative flex flex-col gap-4 max-w-[700px] mx-auto">
             {/* Input Box Area */}
-            <div className="flex-1 w-full flex flex-col gap-2">
-              <div className="bg-[#111111] border border-white/10 rounded-2xl p-3 flex flex-col focus-within:border-white/30 focus-within:bg-[#151515] transition-all shadow-xl min-h-[140px]">
+            <div className="flex-1 w-full flex flex-col gap-2 relative">
+              <div className="bg-[#111111] border border-white/10 rounded-2xl p-3 flex flex-col focus-within:border-white/30 focus-within:bg-[#151515] transition-all shadow-xl min-h-[140px] relative z-10">
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
@@ -299,12 +363,37 @@ export default function ChatWorkspace() {
                         </button>
                       </div>
                     </div>
-                    <button className="w-10 h-10 rounded-xl bg-white border border-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors ml-1 shadow-lg">
+                    <button className="w-10 h-10 rounded-xl bg-white border border-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors ml-1 shadow-lg relative z-20">
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
               </div>
+
+              <AnimatePresence>
+                {onboardingStep === 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="absolute top-[calc(100%+16px)] right-0 w-72 bg-[#111] border border-emerald-500/30 rounded-xl p-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] z-50 flex flex-col gap-2"
+                  >
+                    <div className="absolute -top-2 right-6 w-4 h-4 bg-[#111] border-l border-t border-emerald-500/30 rotate-45"></div>
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="text-emerald-400 font-bold text-sm">Step 2: Start Building</h3>
+                      <button onClick={dismissOnboarding} className="text-white/40 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-white/70 leading-relaxed relative z-10">
+                      Type a prompt like <i>"Make a round-based combat system"</i> and hit send. The AI will start building!
+                    </p>
+                    <button onClick={dismissOnboarding} className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold transition-colors">
+                      Got it, let's go!
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 mt-4">

@@ -335,20 +335,41 @@ end)`;
                 />
               </div>
 
-              <div className="flex items-center gap-3.5 bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
-                <img
-                  src={avatar}
-                  alt="Avatar preview"
-                  className="w-12 h-12 rounded-full border border-white/15 object-cover bg-neutral-900"
-                />
-                <div>
-                  <span className="block text-[13px] font-bold text-white">
-                    {nickname}
-                  </span>
-                  <span className="block text-[10px] font-mono text-white/40">
-                    @{username}
-                  </span>
+              <div className="flex items-center justify-between gap-3.5 bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
+                <div className="flex items-center gap-3.5">
+                  <img
+                    src={avatar}
+                    alt="Avatar preview"
+                    className="w-12 h-12 rounded-full border border-white/15 object-cover bg-neutral-900"
+                  />
+                  <div>
+                    <span className="block text-[13px] font-bold text-white">
+                      {nickname}
+                    </span>
+                    <span className="block text-[10px] font-mono text-white/40">
+                      @{username}
+                    </span>
+                  </div>
                 </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      if (!username) return;
+                      const res = await fetch(`/api/auth/roblox/avatar-by-username/${username}`);
+                      const data = await res.json();
+                      if (data?.data?.[0]?.imageUrl) {
+                        setAvatar(data.data[0].imageUrl);
+                      } else {
+                        alert("Could not find avatar for this username.");
+                      }
+                    } catch(err) {
+                      alert("Error fetching avatar.");
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/10 transition-colors"
+                >
+                  Fetch Roblox Avatar
+                </button>
               </div>
             </div>
           </div>

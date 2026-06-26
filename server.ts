@@ -45,6 +45,32 @@ async function startServer() {
     }
   });
 
+  app.get("/api/auth/roblox/avatar-by-username/:username", async (req, res) => {
+    try {
+      const userRes = await fetch("https://users.roblox.com/v1/usernames/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usernames: [req.params.username], excludeBannedUsers: false })
+      });
+      const userData = await userRes.json();
+      
+      if (!userData.data || userData.data.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      const userId = userData.data[0].id;
+      
+      const thumbRes = await fetch(
+        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=true`
+      );
+      const thumbData = await thumbRes.json();
+      res.json(thumbData);
+    } catch (error) {
+      console.error("Avatar fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch avatar" });
+    }
+  });
+
   // Proxy for Roblox OAuth Token Exchange
   app.post("/api/auth/roblox/token", async (req, res) => {
     try {
