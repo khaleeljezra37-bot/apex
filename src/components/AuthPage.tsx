@@ -35,64 +35,33 @@ export default function AuthPage({
   onBack: () => void;
 }) {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [usernameInput, setUsernameInput] = useState("");
   const [expanded, setExpanded] = useState(true);
   const navigate = useNavigate();
 
-  const handleConnect = async () => {
-    if (!usernameInput.trim()) return;
+  const handleOauth = async () => {
     setIsConnecting(true);
 
-    try {
-      localStorage.setItem("apex_username", usernameInput);
-      localStorage.removeItem("apex_avatar"); // Clear old incorrect avatars
-      let avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${usernameInput}&backgroundColor=232527`;
+    const codeVerifier = generateRandomString(128);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-      // 1. Get User ID from Username
-      const userRes = await fetch("/api/proxy/roblox/usernames", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usernames: [usernameInput], excludeBannedUsers: false })
-      });
-      const userData = await userRes.json();
-      
-      let userId = null;
-      if (userData?.data && userData.data.length > 0) {
-        userId = userData.data[0].id;
-      } else {
-        // Fallback to keyword search
-        const searchRes = await fetch(`/api/proxy/roblox/search?keyword=${usernameInput}&limit=10`);
-        const searchData = await searchRes.json();
-        if (searchData?.data && searchData.data.length > 0) {
-          userId = searchData.data[0].id;
-        }
-      }
+    localStorage.setItem("apex_code_verifier", codeVerifier);
+    localStorage.removeItem("apex_avatar"); // Clear old incorrect avatars
 
-      // 2. Fetch Avatar using User ID
-      if (userId) {
-        try {
-          const thumbRes = await fetch(`/api/proxy/roblox/avatar/${userId}`);
-          const thumbData = await thumbRes.json();
-          if (thumbData?.data?.[0]?.imageUrl) {
-            avatarUrl = thumbData.data[0].imageUrl;
-          }
-        } catch (e) {
-          console.error("Avatar fetch failed", e);
-        }
-      }
+    // Custom credentials inputs
+    const clientId = "1434336652378086576";
+    const redirectUri = "https://apex-rblx.vercel.app/dashboard";
+    const oauthState = "5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb";
+    const scopes = "openid profile";
 
-      localStorage.setItem("apex_avatar", avatarUrl);
-      
-      onLogin({ preferred_username: usernameInput });
-      navigate("/dashboard", { replace: true });
-    } catch (e) {
-      console.error("Connection failed", e);
-      // Fallback: Just let them in anyway
-      onLogin({ preferred_username: usernameInput });
-      navigate("/dashboard", { replace: true });
-    } finally {
-      setIsConnecting(false);
-    }
+    // Generate URL dynamically with user-defined client details
+    const encodedRedirect = encodeURIComponent(redirectUri);
+    const encodedState = encodeURIComponent(oauthState);
+    const encodedScopes = encodeURIComponent(scopes);
+    const encodedChallenge = encodeURIComponent(codeChallenge);
+    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&code_challenge=${encodedChallenge}&code_challenge_method=S256&step=accountConfirm`;
+
+    window.open(authUrl, "_self");
+    setIsConnecting(false);
   };
 
   return (
@@ -116,31 +85,19 @@ export default function AuthPage({
           Establish Connection
         </h1>
 
-        <div className="w-[325px] flex flex-col gap-3 mb-8 z-10">
-          <input
-            type="text"
-            value={usernameInput}
-            onChange={(e) => setUsernameInput(e.target.value)}
-            placeholder="Enter Roblox Username"
-            className="w-full bg-[#111] border border-white/10 text-white rounded-xl px-4 py-3.5 focus:border-white/30 focus:outline-none text-sm transition-colors text-center"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleConnect();
-            }}
-          />
-          <button
-            onClick={handleConnect}
-            disabled={isConnecting || !usernameInput.trim()}
-            className="w-full bg-white text-black font-extrabold uppercase tracking-widest text-[11px] py-4 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:bg-gray-100 active:scale-[0.98] transition-all flex justify-center items-center h-[56px] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isConnecting ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
-              </span>
-            ) : (
-              "Connect Account"
-            )}
-          </button>
-        </div>
+        <button
+          onClick={handleOauth}
+          disabled={isConnecting}
+          className="w-[325px] bg-white text-black font-extrabold uppercase tracking-widest text-[11px] py-4 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:bg-gray-100 active:scale-[0.98] transition-all flex justify-center items-center h-[56px] disabled:opacity-50 disabled:cursor-not-allowed mb-8 z-10"
+        >
+          {isConnecting ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+            </span>
+          ) : (
+            "Sign in with Roblox"
+          )}
+        </button>
 
         <div className="w-full max-w-[480px] flex flex-col items-center">
           <div className="flex items-center w-full mb-8">

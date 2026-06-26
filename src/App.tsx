@@ -59,7 +59,7 @@ export default function App() {
               if (userData.sub) {
                 try {
                   console.log("Fetching avatar for sub:", userData.sub);
-                  const thumbRes = await fetch(`/api/auth/roblox/avatar/${userData.sub}`);
+                  const thumbRes = await fetch(`/api/proxy/roblox/avatar/${userData.sub}`);
                   console.log("Thumb response status:", thumbRes.status);
                   const thumbData = await thumbRes.json();
                   console.log("Thumb data:", thumbData);
