@@ -47,18 +47,27 @@ async function startServer() {
 
   app.get("/api/auth/roblox/avatar-by-username/:username", async (req, res) => {
     try {
+      const username = req.params.username;
       const userRes = await fetch("https://users.roblox.com/v1/usernames/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usernames: [req.params.username], excludeBannedUsers: false })
+        body: JSON.stringify({ usernames: [username], excludeBannedUsers: false })
       });
       const userData = await userRes.json();
       
+      let userId;
       if (!userData.data || userData.data.length === 0) {
-        return res.status(404).json({ error: "User not found" });
+        // Fallback to keyword search
+        const searchRes = await fetch(`https://users.roblox.com/v1/users/search?keyword=${username}&limit=10`);
+        const searchData = await searchRes.json();
+        
+        if (!searchData.data || searchData.data.length === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        userId = searchData.data[0].id; // Take the first result
+      } else {
+        userId = userData.data[0].id;
       }
-      
-      const userId = userData.data[0].id;
       
       const thumbRes = await fetch(
         `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=true`
