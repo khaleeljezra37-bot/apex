@@ -346,7 +346,7 @@ export default function ChatWorkspace() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-0">
         {/* Header */}
-        <header className="h-[70px] flex items-center justify-between px-6 z-10 w-full">
+        <header className="h-[70px] flex items-center justify-between px-6 z-30 w-full relative">
           {/* Left Header */}
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden transition-colors ${
@@ -413,10 +413,7 @@ export default function ChatWorkspace() {
                     ].map((t) => (
                       <button
                         key={t.id}
-                        onPointerDown={(e) => {
-                          e.preventDefault();
-                          handleThemeChange(t.id as Theme);
-                        }}
+                        onClick={() => handleThemeChange(t.id as Theme)}
                         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                           theme === t.id 
                             ? (theme === "white" ? "bg-gray-100 text-black" : "bg-white/10 text-white")
@@ -564,10 +561,7 @@ export default function ChatWorkspace() {
                         "bg-[#1a1a1a] border-white/10"
                       }`}>
                         <button
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            setModel("Gemini Pro");
-                          }}
+                          onClick={() => setModel("Gemini Pro")}
                           className={`w-full text-left px-4 py-2 text-sm transition-colors rounded-lg font-medium ${
                             theme === "white" 
                               ? "text-gray-600 hover:text-black hover:bg-gray-100" 
@@ -577,10 +571,7 @@ export default function ChatWorkspace() {
                           Gemini Pro
                         </button>
                         <button
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            setModel("OpenAI GPT-4");
-                          }}
+                          onClick={() => setModel("OpenAI GPT-4")}
                           className={`w-full text-left px-4 py-2 text-sm transition-colors rounded-lg font-medium ${
                             theme === "white" 
                               ? "text-gray-600 hover:text-black hover:bg-gray-100" 
