@@ -67,37 +67,23 @@ export default function ChatWorkspace() {
       setUsername(storedUsername);
     }
 
-    if (avatar && !avatar.includes("dicebear.com")) {
+    if (avatar) {
       setUserAvatar(avatar);
-    } else if (storedUsername) {
-      // Proactively try to fetch real avatar if currently using dicebear or missing
+    }
+    
+    // Only proactively fetch if we have a username but NO real avatar (dicebear is fallback)
+    if (storedUsername && (!avatar || avatar.includes("dicebear.com"))) {
       console.log("Proactively fetching avatar for username:", storedUsername);
       fetch(`/api/auth/roblox/avatar-by-username/${storedUsername}`)
-        .then(res => {
-          console.log("Proactive fetch status:", res.status);
-          return res.text();
-        })
-        .then(text => {
-          console.log("Proactive fetch text:", text);
-          try {
-            const data = JSON.parse(text);
-            if (data?.data?.[0]?.imageUrl) {
-              const realAvatar = data.data[0].imageUrl;
-              setUserAvatar(realAvatar);
-              localStorage.setItem("apex_avatar", realAvatar);
-              console.log("Proactively set avatar to:", realAvatar);
-            } else if (avatar) {
-              setUserAvatar(avatar);
-            }
-          } catch(e) {
-            console.error("Failed to parse proactive fetch data:", e);
-            if (avatar) setUserAvatar(avatar);
+        .then(res => res.json())
+        .then(data => {
+          if (data?.data?.[0]?.imageUrl) {
+            const realAvatar = data.data[0].imageUrl;
+            setUserAvatar(realAvatar);
+            localStorage.setItem("apex_avatar", realAvatar);
           }
         })
-        .catch(err => {
-          console.error("Auto-fetch avatar error:", err);
-          if (avatar) setUserAvatar(avatar);
-        });
+        .catch(err => console.error("Auto-fetch avatar error:", err));
     }
   }, []);
 

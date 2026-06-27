@@ -41,27 +41,32 @@ export default function AuthPage({
   const handleOauth = async () => {
     setIsConnecting(true);
 
-    const codeVerifier = generateRandomString(128);
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    try {
+      const codeVerifier = generateRandomString(128);
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    localStorage.setItem("apex_code_verifier", codeVerifier);
-    localStorage.removeItem("apex_avatar"); // Clear old incorrect avatars
+      localStorage.setItem("apex_code_verifier", codeVerifier);
+      localStorage.removeItem("apex_avatar"); // Clear old incorrect avatars
+      localStorage.removeItem("apex_username");
 
-    // Custom credentials inputs
-    const clientId = "1434336652378086576";
-    const redirectUri = "https://apex-rblx.vercel.app/dashboard";
-    const oauthState = "5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb";
-    const scopes = "openid profile";
+      // Custom credentials inputs
+      const clientId = "1434336652378086576";
+      const redirectUri = "https://apex-rblx.vercel.app/dashboard";
+      const oauthState = "5uz1gbhlzq9gb704dr7fhfey09bu4v3gcue4dhvb";
+      const scopes = "openid profile";
 
-    // Generate URL dynamically with user-defined client details
-    const encodedRedirect = encodeURIComponent(redirectUri);
-    const encodedState = encodeURIComponent(oauthState);
-    const encodedScopes = encodeURIComponent(scopes);
-    const encodedChallenge = encodeURIComponent(codeChallenge);
-    const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&code_challenge=${encodedChallenge}&code_challenge_method=S256&step=accountConfirm`;
+      // Generate URL dynamically with user-defined client details
+      const encodedRedirect = encodeURIComponent(redirectUri);
+      const encodedState = encodeURIComponent(oauthState);
+      const encodedScopes = encodeURIComponent(scopes);
+      const encodedChallenge = encodeURIComponent(codeChallenge);
+      const authUrl = `https://authorize.roblox.com/?client_id=${clientId}&response_type=code&redirect_uri=${encodedRedirect}&scope=${encodedScopes}&state=${encodedState}&code_challenge=${encodedChallenge}&code_challenge_method=S256&step=accountConfirm`;
 
-    window.open(authUrl, "_self");
-    setIsConnecting(false);
+      window.open(authUrl, "_self");
+    } catch (e) {
+      console.error("Auth redirect failed:", e);
+      setIsConnecting(false);
+    }
   };
 
   return (
@@ -82,7 +87,7 @@ export default function AuthPage({
         className="max-w-2xl w-full px-6 flex flex-col items-center relative z-10"
       >
         <h1 className="text-4xl md:text-5xl font-black text-white mb-10 tracking-tighter uppercase text-center mt-4 drop-shadow-xl">
-          Establish Connection
+          {isConnecting ? "Redirecting to Roblox" : "Establish Connection"}
         </h1>
 
         <button
@@ -93,6 +98,7 @@ export default function AuthPage({
           {isConnecting ? (
             <span className="flex items-center gap-2">
               <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+              <span className="animate-pulse">Connecting...</span>
             </span>
           ) : (
             "Sign in with Roblox"

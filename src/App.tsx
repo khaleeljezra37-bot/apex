@@ -24,9 +24,11 @@ export default function App() {
         try {
           const codeVerifier = localStorage.getItem("apex_code_verifier");
           if (!codeVerifier) {
-            throw new Error("No code verifier found");
+            console.error("No code verifier found in localStorage");
+            return;
           }
 
+          console.log("Exchanging code for token...");
           const tokenRes = await fetch("/api/auth/roblox/token", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -35,52 +37,80 @@ export default function App() {
               grant_type: "authorization_code",
               code: code,
               code_verifier: codeVerifier,
-              redirect_uri: "https://apex-rblx.vercel.app/dashboard",
+              redirect_uri: window.location.origin + "/dashboard", // Try to be more dynamic
             }),
           });
 
-          const tokenData = await tokenRes.json();
-
-          if (tokenData.access_token) {
-            const userRes = await fetch("/api/auth/roblox/userinfo", {
-              headers: { Authorization: `Bearer ${tokenData.access_token}` },
-            });
-            const userData = await userRes.json();
-
-            if (userData.preferred_username) {
-              localStorage.setItem(
-                "apex_username",
-                userData.preferred_username,
-              );
-              
-              // Fetch avatar if we have the user ID (sub)
-              let avatarUrl = userData.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.preferred_username}&backgroundColor=232527`;
-              
-              if (userData.sub) {
-                try {
-                  console.log("Fetching avatar for sub:", userData.sub);
-                  const thumbRes = await fetch(`/api/proxy/roblox/avatar/${userData.sub}`);
-                  console.log("Thumb response status:", thumbRes.status);
-                  const thumbData = await thumbRes.json();
-                  console.log("Thumb data:", thumbData);
-                  if (thumbData?.data?.[0]?.imageUrl) {
-                    avatarUrl = thumbData.data[0].imageUrl;
-                    console.log("Set avatarUrl to:", avatarUrl);
-                  }
-                } catch (e) {
-                  console.error("Failed to fetch Roblox thumbnail:", e);
-                }
-              }
-
-              localStorage.setItem("apex_avatar", avatarUrl);
-              setAuthKey((k) => k + 1);
-            }
+          if (!tokenRes.ok) {
+             // Fallback for hardcoded redirect if dynamic fails
+             const tokenResFallback = await fetch("/api/auth/roblox/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                  client_id: "1434336652378086576",
+                  grant_type: "authorization_code",
+                  code: code,
+                  code_verifier: codeVerifier,
+                  redirect_uri: "https://apex-rblx.vercel.app/dashboard",
+                }),
+              });
+              if (!tokenResFallback.ok) throw new Error("Token exchange failed");
+              return handleTokenResponse(await tokenResFallback.json());
           }
+
+          const tokenData = await tokenRes.json();
+          await handleTokenResponse(tokenData);
+
         } catch (e) {
           console.error("Token exchange failed:", e);
         } finally {
-          setIsExchanging(false);
-          navigate("/dashboard", { replace: true });
+          // Small delay to make it feel like it's actually fetching
+          setTimeout(() => {
+            setIsExchanging(false);
+            navigate("/dashboard", { replace: true });
+          }, 1000);
+        }
+      };
+
+      const handleTokenResponse = async (tokenData: any) => {
+        if (tokenData.access_token) {
+          console.log("Fetching userinfo...");
+          const userRes = await fetch("/api/auth/roblox/userinfo", {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+          });
+          const userData = await userRes.json();
+          console.log("Roblox User Data:", userData);
+
+          const username = userData.preferred_username || userData.nickname || userData.name || userData.display_name || `User_${userData.sub}`;
+          
+          if (username) {
+            localStorage.setItem("apex_username", username);
+            
+            let avatarUrl = userData.picture;
+            
+            // If picture is missing but we have sub, try proxy
+            if (!avatarUrl && userData.sub) {
+              try {
+                console.log("Fetching avatar via proxy for sub:", userData.sub);
+                const thumbRes = await fetch(`/api/proxy/roblox/avatar/${userData.sub}`);
+                const thumbData = await thumbRes.json();
+                if (thumbData?.data?.[0]?.imageUrl) {
+                  avatarUrl = thumbData.data[0].imageUrl;
+                }
+              } catch (e) {
+                console.error("Proxy avatar fetch failed:", e);
+              }
+            }
+
+            // Final fallback
+            if (!avatarUrl) {
+                avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}&backgroundColor=232527`;
+            }
+
+            localStorage.setItem("apex_avatar", avatarUrl);
+            localStorage.setItem("apex_roblox_id", userData.sub);
+            setAuthKey((k) => k + 1);
+          }
         }
       };
 
@@ -94,7 +124,10 @@ export default function App() {
         <div className="flex flex-col items-center gap-4">
           <span className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></span>
           <p className="text-sm text-white/50 uppercase tracking-widest font-bold">
-            Connecting to Roblox...
+            Synchronizing with Roblox...
+          </p>
+          <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] animate-pulse">
+            Fetching profile & avatar
           </p>
         </div>
       </div>
