@@ -11,17 +11,26 @@ app.use(express.urlencoded({ extended: true }));
 
 // Vercel serverless support: restore the original URL from headers if rewritten to /api/index
 app.use((req, res, next) => {
-  const originalUrl = (req.headers["x-original-url"] || req.headers["x-now-original-url"] || req.headers["x-forwarded-url"]) as string;
+  const originalUrl = (
+    req.headers["x-vercel-forwarded-path"] ||
+    req.headers["x-original-url"] ||
+    req.headers["x-now-original-url"] ||
+    req.headers["x-forwarded-url"]
+  ) as string;
+
   if (originalUrl) {
     try {
       if (originalUrl.startsWith("http://") || originalUrl.startsWith("https://")) {
         const parsedUrl = new URL(originalUrl);
         req.url = parsedUrl.pathname + parsedUrl.search;
       } else {
-        req.url = originalUrl;
+        let targetUrl = originalUrl;
+        if (!targetUrl.includes("?") && req.url.includes("?")) {
+          targetUrl += req.url.substring(req.url.indexOf("?"));
+        }
+        req.url = targetUrl;
       }
     } catch (e) {
-      // Fallback
       req.url = originalUrl;
     }
   }
