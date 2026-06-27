@@ -219,6 +219,13 @@ export default function LandingPage() {
           >
             Terms of Service
           </Link>
+          <span className="text-[10px] text-white/10 select-none">|</span>
+          <Link
+            to="/admin"
+            className="text-[10px] text-white/30 hover:text-emerald-400 uppercase tracking-widest font-bold transition-colors"
+          >
+            Admin Portal
+          </Link>
         </motion.div>
       </div>
     </div>

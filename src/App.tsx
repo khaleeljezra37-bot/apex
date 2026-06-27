@@ -5,6 +5,7 @@ import ChatWorkspace from "./components/ChatWorkspace";
 import LandingPage from "./components/LandingPage";
 import AuthPage from "./components/AuthPage";
 import LegalPage from "./components/LegalPage";
+import AdminPage from "./components/AdminPage";
 
 export default function App() {
   const [isExchanging, setIsExchanging] = useState(false);
@@ -222,6 +223,7 @@ export default function App() {
         }
       />
       <Route path="/dashboard" element={<ChatWorkspace key={authKey} />} />
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="/privacy-policy" element={<LegalPage page="privacy" />} />
       <Route path="/terms-of-service" element={<LegalPage page="terms" />} />
     </Routes>
