@@ -64,33 +64,45 @@ export default function ChatWorkspace() {
     const storedUsername = localStorage.getItem("apex_username");
     const robloxId = localStorage.getItem("apex_roblox_id");
     
+    console.log("ChatWorkspace init:", { storedUsername, avatar, robloxId });
+
     if (storedUsername) {
       setUsername(storedUsername);
+    } else {
+      // If no username, we might be in a broken state
+      console.warn("No username in ChatWorkspace, redirecting to sign-in");
+      // Optionally navigate back if really needed, but let's try to recover first
     }
 
     if (avatar) {
       setUserAvatar(avatar);
     }
     
-    // Proactively fetch real avatar if we have an ID but currently using dicebear or missing
-    if (robloxId && (!avatar || avatar.includes("dicebear.com"))) {
+    // Proactively fetch real avatar if missing or generic
+    const isGenericAvatar = !avatar || avatar.includes("dicebear.com") || avatar === "";
+    
+    if (robloxId && isGenericAvatar) {
+      console.log("Proactively fetching avatar for robloxId:", robloxId);
       fetch(`/api/proxy/roblox/avatar/${robloxId}`)
         .then(res => res.json())
         .then(data => {
           if (data?.data?.[0]?.imageUrl) {
             const realAvatar = data.data[0].imageUrl;
+            console.log("Found real avatar via ID:", realAvatar);
             setUserAvatar(realAvatar);
             localStorage.setItem("apex_avatar", realAvatar);
           }
         })
         .catch(err => console.error("Auto-fetch avatar error:", err));
-    } else if (storedUsername && (!avatar || avatar.includes("dicebear.com"))) {
+    } else if (storedUsername && isGenericAvatar) {
       // Fallback to username search if ID is missing
+      console.log("Proactively searching avatar for username:", storedUsername);
       fetch(`/api/auth/roblox/avatar-by-username/${storedUsername}`)
         .then(res => res.json())
         .then(data => {
           if (data?.data?.[0]?.imageUrl) {
             const realAvatar = data.data[0].imageUrl;
+            console.log("Found real avatar via username search:", realAvatar);
             setUserAvatar(realAvatar);
             localStorage.setItem("apex_avatar", realAvatar);
           }

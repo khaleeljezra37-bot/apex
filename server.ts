@@ -154,6 +154,12 @@ async function startServer() {
         },
       );
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Roblox UserInfo Error:", response.status, errorText);
+        return res.status(response.status).json({ error: "Failed to fetch user info from Roblox", details: errorText });
+      }
+
       const data = await response.json();
 
       // Fetch avatar server-side to simplify client logic

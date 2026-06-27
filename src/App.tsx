@@ -73,15 +73,29 @@ export default function App() {
       };
 
       const handleTokenResponse = async (tokenData: any) => {
-        if (tokenData.access_token) {
+        if (!tokenData.access_token) {
+          console.error("No access token in response", tokenData);
+          return;
+        }
+
+        try {
           console.log("Fetching userinfo...");
           const userRes = await fetch("/api/auth/roblox/userinfo", {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
-          const userData = await userRes.json();
-          console.log("Roblox User Data:", userData);
+          
+          if (!userRes.ok) {
+            throw new Error(`Userinfo fetch failed: ${userRes.status}`);
+          }
 
-          const username = userData.preferred_username || userData.nickname || userData.name || userData.display_name || `User_${userData.sub}`;
+          const userData = await userRes.json();
+          console.log("Roblox User Data Received:", userData);
+
+          if (userData.error) {
+            throw new Error(`Roblox API Error: ${userData.error}`);
+          }
+
+          const username = userData.preferred_username || userData.nickname || userData.name || userData.display_name || (userData.sub ? `User_${userData.sub}` : null);
           
           if (username) {
             localStorage.setItem("apex_username", username);
@@ -102,15 +116,23 @@ export default function App() {
               }
             }
 
-            // Final fallback
+            // Final fallback to dicebear
             if (!avatarUrl) {
                 avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}&backgroundColor=232527`;
             }
 
             localStorage.setItem("apex_avatar", avatarUrl);
-            localStorage.setItem("apex_roblox_id", userData.sub);
+            if (userData.sub) {
+              localStorage.setItem("apex_roblox_id", userData.sub.toString());
+            }
+            
+            console.log("Profile synchronized successfully:", { username, avatarUrl });
             setAuthKey((k) => k + 1);
+          } else {
+            console.warn("No username found in Roblox user data", userData);
           }
+        } catch (e) {
+          console.error("Failed to process user info:", e);
         }
       };
 
