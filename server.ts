@@ -130,6 +130,9 @@ async function startServer() {
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        console.error("Roblox Token Exchange Failed:", response.status, data);
+      }
       res.status(response.status).json(data);
     } catch (error: any) {
       console.error("Roblox Token Error:", error);

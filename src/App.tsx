@@ -92,8 +92,8 @@ export default function App() {
             throw new Error("Security verifier missing. Please try signing in again.");
           }
 
-          console.log("Exchanging code for token...");
-          const tokenRes = await fetch("/api/auth/roblox/token", {
+          console.log("Exchanging code for token (direct)...");
+          const tokenRes = await fetch("https://apis.roblox.com/oauth/v1/token", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
@@ -107,7 +107,8 @@ export default function App() {
 
           let tokenData;
           if (!tokenRes.ok) {
-            const tokenResFallback = await fetch("/api/auth/roblox/token", {
+            console.warn("Direct exchange failed or CORS issue, falling back to proxy...");
+            const proxyRes = await fetch("/api/auth/roblox/token", {
               method: "POST",
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
               body: new URLSearchParams({
@@ -115,14 +116,30 @@ export default function App() {
                 grant_type: "authorization_code",
                 code: code,
                 code_verifier: codeVerifier,
-                redirect_uri: "https://apex-rblx.vercel.app/dashboard",
+                redirect_uri: window.location.origin + "/dashboard",
               }),
             });
-            if (!tokenResFallback.ok) {
-              const err = await tokenResFallback.json().catch(() => ({}));
-              throw new Error(err.error_description || err.error || "Token exchange failed.");
+            
+            if (!proxyRes.ok) {
+              const proxyResFallback = await fetch("/api/auth/roblox/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                  client_id: "1434336652378086576",
+                  grant_type: "authorization_code",
+                  code: code,
+                  code_verifier: codeVerifier,
+                  redirect_uri: "https://apex-rblx.vercel.app/dashboard",
+                }),
+              });
+              if (!proxyResFallback.ok) {
+                const err = await proxyResFallback.json().catch(() => ({}));
+                throw new Error(err.error_description || err.error || "Token exchange failed.");
+              }
+              tokenData = await proxyResFallback.json();
+            } else {
+              tokenData = await proxyRes.json();
             }
-            tokenData = await tokenResFallback.json();
           } else {
             tokenData = await tokenRes.json();
           }
