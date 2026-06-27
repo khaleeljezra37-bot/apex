@@ -33,8 +33,15 @@ export default function ChatWorkspace() {
     "history" | "settings" | null
   >(null);
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("apex_theme");
+      if (saved === "dark" || saved === "white" || saved === "gray") return saved;
+    }
+    return "dark";
+  });
   const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const themeRef = useRef<HTMLDivElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -120,13 +127,21 @@ export default function ChatWorkspace() {
   }, []);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("apex_theme") as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (themeRef.current && !themeRef.current.contains(event.target as Node)) {
+        setIsThemeOpen(false);
+      }
+    };
+    if (isThemeOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  }, []);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isThemeOpen]);
 
   const handleThemeChange = (newTheme: Theme) => {
+    console.log("Changing theme to:", newTheme);
     setTheme(newTheme);
     localStorage.setItem("apex_theme", newTheme);
     setIsThemeOpen(false);
@@ -141,10 +156,10 @@ export default function ChatWorkspace() {
   };
 
   return (
-    <div className={`flex min-h-screen font-sans overflow-hidden transition-colors duration-300 ${
+    <div className={`flex min-h-screen font-sans overflow-hidden transition-colors duration-500 ${
       theme === "dark" ? "bg-black text-white" : 
       theme === "white" ? "bg-white text-gray-900" : 
-      "bg-[#232527] text-gray-100"
+      "bg-[#151719] text-gray-100"
     }`}>
       {/* Sidebar */}
       <aside className={`w-[60px] border-r flex-col items-center py-6 hidden md:flex z-50 transition-colors duration-300 ${
@@ -204,7 +219,7 @@ export default function ChatWorkspace() {
         className={`fixed top-0 left-[60px] h-full border-r z-40 transition-all duration-300 ease-in-out ${activeSidebar ? "translate-x-0" : "-translate-x-full"} ${
           theme === "dark" ? "bg-[#111111] border-white/5" :
           theme === "white" ? "bg-white border-gray-200 shadow-2xl" :
-          "bg-[#151719] border-white/10"
+          "bg-[#1c1e22] border-white/10"
         }`}
         style={{ width: "300px" }}
       >
@@ -364,10 +379,13 @@ export default function ChatWorkspace() {
               Store Purchases
             </button>
             
-            <div className="relative">
+            <div className="relative" ref={themeRef}>
               <button 
-                onClick={() => setIsThemeOpen(!isThemeOpen)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsThemeOpen(!isThemeOpen);
+                }}
+                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 ${
                   theme === "white" ? "border-gray-200 text-gray-500 hover:bg-gray-100" : "border-white/10 text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -455,7 +473,9 @@ export default function ChatWorkspace() {
             <div className="flex items-center justify-center gap-6 mb-4">
               {/* Logo Mark */}
               <div className={`w-[80px] h-[80px] flex items-center justify-center rounded-3xl border shadow-lg overflow-hidden transition-colors ${
-                theme === "white" ? "bg-white border-gray-200 text-gray-900" : "bg-[#111] border-white/10 text-white shadow-white/5"
+                theme === "white" ? "bg-white border-gray-200 text-gray-900" : 
+                theme === "gray" ? "bg-[#1c1e22] border-white/10 text-white shadow-black/20" :
+                "bg-[#111] border-white/10 text-white shadow-white/5"
               }`}>
                 <svg
                   viewBox="0 0 24 24"
@@ -491,6 +511,8 @@ export default function ChatWorkspace() {
               <div className={`border rounded-2xl p-3 flex flex-col transition-all shadow-xl min-h-[140px] relative z-10 ${
                 theme === "white" 
                   ? "bg-gray-50 border-gray-200 focus-within:border-gray-300 focus-within:bg-white" 
+                  : theme === "gray"
+                  ? "bg-[#1c1e22] border-white/10 focus-within:border-white/20 focus-within:bg-[#212428]"
                   : "bg-[#111111] border-white/10 focus-within:border-white/30 focus-within:bg-[#151515]"
               }`}>
                 <textarea
