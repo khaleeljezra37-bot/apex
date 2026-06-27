@@ -22,7 +22,19 @@
     },
     {
       "source": "/api/auth/roblox/avatar-by-username/:username",
-      "destination": "/api/auth/roblox/avatar-by-username/:username"
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/admin/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/generate",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/pull",
+      "destination": "/api/index"
     },
     {
       "source": "/api/auth/roblox/avatar/:sub",
