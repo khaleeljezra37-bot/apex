@@ -13,6 +13,7 @@ import {
   ArrowRight,
   X,
 } from "lucide-react";
+import { UserProfileHeader } from "./UserProfileHeader";
 
 export default function ChatWorkspace() {
   const [inputText, setInputText] = useState("");
@@ -258,27 +259,17 @@ export default function ChatWorkspace() {
               <Moon className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-2 relative">
-              <div
-                className="w-8 h-8 rounded-full bg-black flex items-center justify-center cursor-pointer overflow-hidden border border-white/10 relative z-10"
-                onClick={() => {
-                  if (!username) {
-                    navigate("/sign-in");
-                  }
-                }}
-              >
-                {username ? (
-                  <img
-                    src={userAvatar}
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#111] flex items-center justify-center text-xs">
-                    ?
-                  </div>
-                )}
-              </div>
+            <div className="relative">
+              {username ? (
+                <UserProfileHeader username={username} avatar={userAvatar} />
+              ) : (
+                <button 
+                  onClick={() => navigate("/sign-in")}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-colors"
+                >
+                  Sign In
+                </button>
+              )}
               <AnimatePresence>
                 {onboardingStep === 1 && (
                   <motion.div
