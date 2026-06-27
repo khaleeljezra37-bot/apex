@@ -156,27 +156,25 @@ async function startServer() {
 
       const data = await response.json();
 
-      // Fetch avatar if we have the user ID (sub)
+      // Fetch avatar server-side to simplify client logic
       if (data.sub) {
         try {
           const thumbRes = await fetch(
-            `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${data.sub}&size=420x420&format=Png&isCircular=true`,
+            `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${data.sub}&size=420x420&format=Png&isCircular=true`
           );
           const thumbData = await thumbRes.json();
           if (thumbData?.data?.[0]?.imageUrl) {
             data.picture = thumbData.data[0].imageUrl;
           }
         } catch (e) {
-          console.error("Failed to fetch Roblox thumbnail:", e);
+          console.error("Server-side avatar fetch failed:", e);
         }
       }
 
-      res.status(response.status).json(data);
+      res.json(data);
     } catch (error: any) {
-      console.error("Roblox User Info Error:", error);
-      res
-        .status(500)
-        .json({ error: error.message || "Failed to fetch user info" });
+      console.error("Roblox UserInfo Error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch user info" });
     }
   });
 
