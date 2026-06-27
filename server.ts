@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 
@@ -9,6 +8,25 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Vercel serverless support: restore the original URL from headers if rewritten to /api/index
+app.use((req, res, next) => {
+  const originalUrl = (req.headers["x-original-url"] || req.headers["x-now-original-url"] || req.headers["x-forwarded-url"]) as string;
+  if (originalUrl) {
+    try {
+      if (originalUrl.startsWith("http://") || originalUrl.startsWith("https://")) {
+        const parsedUrl = new URL(originalUrl);
+        req.url = parsedUrl.pathname + parsedUrl.search;
+      } else {
+        req.url = originalUrl;
+      }
+    } catch (e) {
+      // Fallback
+      req.url = originalUrl;
+    }
+  }
+  next();
+});
 
   // Serve custom Apex favicon svg directly from the server
   app.get("/favicon.ico", (req, res) => {
@@ -137,6 +155,15 @@ app.use(express.urlencoded({ extended: true }));
       "admin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"
     );
     return res.json({ success: true });
+  });
+
+  app.get("/api/admin/debug-headers", (req, res) => {
+    res.json({
+      url: req.url,
+      originalUrl: req.originalUrl,
+      method: req.method,
+      headers: req.headers,
+    });
   });
 
   // Proxies for direct API integration without Vercel rewrites (local dev)
@@ -383,6 +410,7 @@ app.use(express.urlencoded({ extended: true }));
   // Serve Vite/static files in standalone mode
   async function initServer() {
     if (process.env.NODE_ENV !== "production") {
+      const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",
