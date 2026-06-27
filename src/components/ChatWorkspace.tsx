@@ -127,7 +127,20 @@ export default function ChatWorkspace() {
   }, []);
 
   useEffect(() => {
-    // Removed mousedown listener since we use a full-screen overlay for dropdowns
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // Close theme dropdown if clicked outside
+      if (themeRef.current && !themeRef.current.contains(target)) {
+        setIsThemeOpen(false);
+      }
+    };
+
+    if (isThemeOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [isThemeOpen]);
 
   const handleThemeChange = (newTheme: Theme) => {
@@ -369,7 +382,7 @@ export default function ChatWorkspace() {
               Store Purchases
             </button>
             
-            <div className="relative">
+            <div className="relative" ref={themeRef}>
               <button 
                 onClick={() => setIsThemeOpen(!isThemeOpen)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 ${
@@ -383,21 +396,16 @@ export default function ChatWorkspace() {
 
               <AnimatePresence>
                 {isThemeOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40"
-                      onClick={() => setIsThemeOpen(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className={`absolute top-full right-0 mt-2 w-32 rounded-xl border p-1 shadow-xl z-50 ${
-                        theme === "white" ? "bg-white border-gray-200" : 
-                        theme === "gray" ? "bg-[#2a2d30] border-white/10" :
-                        "bg-[#111] border-white/10"
-                      }`}
-                    >
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className={`absolute top-full right-0 mt-2 w-32 rounded-xl border p-1 shadow-xl z-50 ${
+                      theme === "white" ? "bg-white border-gray-200" : 
+                      theme === "gray" ? "bg-[#2a2d30] border-white/10" :
+                      "bg-[#111] border-white/10"
+                    }`}
+                  >
                     {[
                       { id: "dark", label: "Dark", icon: Moon },
                       { id: "white", label: "White", icon: Sun },
@@ -405,7 +413,10 @@ export default function ChatWorkspace() {
                     ].map((t) => (
                       <button
                         key={t.id}
-                        onClick={() => handleThemeChange(t.id as Theme)}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          handleThemeChange(t.id as Theme);
+                        }}
                         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                           theme === t.id 
                             ? (theme === "white" ? "bg-gray-100 text-black" : "bg-white/10 text-white")
@@ -417,7 +428,6 @@ export default function ChatWorkspace() {
                       </button>
                     ))}
                   </motion.div>
-                  </>
                 )}
               </AnimatePresence>
             </div>
@@ -554,7 +564,10 @@ export default function ChatWorkspace() {
                         "bg-[#1a1a1a] border-white/10"
                       }`}>
                         <button
-                          onClick={() => setModel("Gemini Pro")}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            setModel("Gemini Pro");
+                          }}
                           className={`w-full text-left px-4 py-2 text-sm transition-colors rounded-lg font-medium ${
                             theme === "white" 
                               ? "text-gray-600 hover:text-black hover:bg-gray-100" 
@@ -564,7 +577,10 @@ export default function ChatWorkspace() {
                           Gemini Pro
                         </button>
                         <button
-                          onClick={() => setModel("OpenAI GPT-4")}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            setModel("OpenAI GPT-4");
+                          }}
                           className={`w-full text-left px-4 py-2 text-sm transition-colors rounded-lg font-medium ${
                             theme === "white" 
                               ? "text-gray-600 hover:text-black hover:bg-gray-100" 
