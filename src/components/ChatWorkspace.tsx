@@ -159,7 +159,7 @@ export default function ChatWorkspace() {
     <div className={`flex min-h-screen font-sans overflow-hidden transition-colors duration-500 ${
       theme === "dark" ? "bg-black text-white" : 
       theme === "white" ? "bg-white text-gray-900" : 
-      "bg-[#151719] text-gray-100"
+      "bg-[#232527] text-gray-100"
     }`}>
       {/* Sidebar */}
       <aside className={`w-[60px] border-r flex-col items-center py-6 hidden md:flex z-50 transition-colors duration-300 ${
@@ -219,7 +219,7 @@ export default function ChatWorkspace() {
         className={`fixed top-0 left-[60px] h-full border-r z-40 transition-all duration-300 ease-in-out ${activeSidebar ? "translate-x-0" : "-translate-x-full"} ${
           theme === "dark" ? "bg-[#111111] border-white/5" :
           theme === "white" ? "bg-white border-gray-200 shadow-2xl" :
-          "bg-[#1c1e22] border-white/10"
+          "bg-[#2a2d30] border-white/10 shadow-black/20"
         }`}
         style={{ width: "300px" }}
       >
@@ -282,7 +282,10 @@ export default function ChatWorkspace() {
                     ].map((t) => (
                       <button
                         key={t.id}
-                        onClick={() => handleThemeChange(t.id as Theme)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleThemeChange(t.id as Theme);
+                        }}
                         className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all ${
                           theme === t.id
                             ? (theme === "white" ? "bg-gray-900 text-white border-black" : "bg-white text-black border-white")
@@ -411,7 +414,10 @@ export default function ChatWorkspace() {
                     ].map((t) => (
                       <button
                         key={t.id}
-                        onClick={() => handleThemeChange(t.id as Theme)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleThemeChange(t.id as Theme);
+                        }}
                         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                           theme === t.id 
                             ? (theme === "white" ? "bg-gray-100 text-black" : "bg-white/10 text-white")
@@ -474,7 +480,7 @@ export default function ChatWorkspace() {
               {/* Logo Mark */}
               <div className={`w-[80px] h-[80px] flex items-center justify-center rounded-3xl border shadow-lg overflow-hidden transition-colors ${
                 theme === "white" ? "bg-white border-gray-200 text-gray-900" : 
-                theme === "gray" ? "bg-[#1c1e22] border-white/10 text-white shadow-black/20" :
+                theme === "gray" ? "bg-[#2a2d30] border-white/10 text-white shadow-black/20" :
                 "bg-[#111] border-white/10 text-white shadow-white/5"
               }`}>
                 <svg
@@ -512,7 +518,7 @@ export default function ChatWorkspace() {
                 theme === "white" 
                   ? "bg-gray-50 border-gray-200 focus-within:border-gray-300 focus-within:bg-white" 
                   : theme === "gray"
-                  ? "bg-[#1c1e22] border-white/10 focus-within:border-white/20 focus-within:bg-[#212428]"
+                  ? "bg-[#2a2d30] border-white/10 focus-within:border-white/20 focus-within:bg-[#32363b]"
                   : "bg-[#111111] border-white/10 focus-within:border-white/30 focus-within:bg-[#151515]"
               }`}>
                 <textarea
@@ -553,8 +559,10 @@ export default function ChatWorkspace() {
                         <span className={`font-bold transition-colors ${theme === "white" ? "text-gray-900" : "text-white"}`}>{model}</span>{" "}
                         <ChevronDown className="w-3.5 h-3.5" />
                       </button>
-                      <div className={`absolute right-0 bottom-full mb-2 w-40 border rounded-xl shadow-xl opacity-0 group-hover/model:opacity-100 transition-opacity pointer-events-none group-hover/model:pointer-events-auto z-50 p-1 transition-colors ${
-                        theme === "white" ? "bg-white border-gray-200" : "bg-[#1a1a1a] border-white/10"
+                    <div className={`absolute right-0 bottom-full mb-2 w-40 border rounded-xl shadow-xl opacity-0 group-hover/model:opacity-100 transition-opacity pointer-events-none group-hover/model:pointer-events-auto z-50 p-1 transition-colors ${
+                        theme === "white" ? "bg-white border-gray-200" : 
+                        theme === "gray" ? "bg-[#2a2d30] border-white/10" :
+                        "bg-[#1a1a1a] border-white/10"
                       }`}>
                         <button
                           onClick={() => setModel("Gemini Pro")}
