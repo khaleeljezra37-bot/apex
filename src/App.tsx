@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { X } from "lucide-react";
 import ChatWorkspace from "./components/ChatWorkspace";
 import LandingPage from "./components/LandingPage";
 import AuthPage from "./components/AuthPage";
@@ -8,6 +9,7 @@ import LegalPage from "./components/LegalPage";
 export default function App() {
   const [isExchanging, setIsExchanging] = useState(false);
   const [authKey, setAuthKey] = useState(0);
+  const [authError, setAuthError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,63 +21,12 @@ export default function App() {
     if (code && !exchangeStarted.current) {
       exchangeStarted.current = true;
       setIsExchanging(true);
-
-      const exchangeToken = async () => {
-        try {
-          const codeVerifier = localStorage.getItem("apex_code_verifier");
-          if (!codeVerifier) {
-            console.error("No code verifier found in localStorage");
-            return;
-          }
-
-          console.log("Exchanging code for token...");
-          const tokenRes = await fetch("/api/auth/roblox/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              client_id: "1434336652378086576",
-              grant_type: "authorization_code",
-              code: code,
-              code_verifier: codeVerifier,
-              redirect_uri: window.location.origin + "/dashboard", // Try to be more dynamic
-            }),
-          });
-
-          if (!tokenRes.ok) {
-             // Fallback for hardcoded redirect if dynamic fails
-             const tokenResFallback = await fetch("/api/auth/roblox/token", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                  client_id: "1434336652378086576",
-                  grant_type: "authorization_code",
-                  code: code,
-                  code_verifier: codeVerifier,
-                  redirect_uri: "https://apex-rblx.vercel.app/dashboard",
-                }),
-              });
-              if (!tokenResFallback.ok) throw new Error("Token exchange failed");
-              return handleTokenResponse(await tokenResFallback.json());
-          }
-
-          const tokenData = await tokenRes.json();
-          await handleTokenResponse(tokenData);
-
-        } catch (e) {
-          console.error("Token exchange failed:", e);
-        } finally {
-          // Small delay to make it feel like it's actually fetching
-          setTimeout(() => {
-            setIsExchanging(false);
-            navigate("/dashboard", { replace: true });
-          }, 1000);
-        }
-      };
+      setAuthError(null);
 
       const handleTokenResponse = async (tokenData: any) => {
         if (!tokenData.access_token) {
           console.error("No access token in response", tokenData);
-          return;
+          throw new Error("No access token received from Roblox.");
         }
 
         try {
@@ -102,10 +53,8 @@ export default function App() {
             
             let avatarUrl = userData.picture;
             
-            // If picture is missing but we have sub, try proxy
             if (!avatarUrl && userData.sub) {
               try {
-                console.log("Fetching avatar via proxy for sub:", userData.sub);
                 const thumbRes = await fetch(`/api/proxy/roblox/avatar/${userData.sub}`);
                 const thumbData = await thumbRes.json();
                 if (thumbData?.data?.[0]?.imageUrl) {
@@ -116,7 +65,6 @@ export default function App() {
               }
             }
 
-            // Final fallback to dicebear
             if (!avatarUrl) {
                 avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}&backgroundColor=232527`;
             }
@@ -129,10 +77,67 @@ export default function App() {
             console.log("Profile synchronized successfully:", { username, avatarUrl });
             setAuthKey((k) => k + 1);
           } else {
-            console.warn("No username found in Roblox user data", userData);
+            throw new Error("Could not find a username in your Roblox profile.");
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error("Failed to process user info:", e);
+          throw e;
+        }
+      };
+
+      const exchangeToken = async () => {
+        try {
+          const codeVerifier = localStorage.getItem("apex_code_verifier");
+          if (!codeVerifier) {
+            throw new Error("Security verifier missing. Please try signing in again.");
+          }
+
+          console.log("Exchanging code for token...");
+          const tokenRes = await fetch("/api/auth/roblox/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              client_id: "1434336652378086576",
+              grant_type: "authorization_code",
+              code: code,
+              code_verifier: codeVerifier,
+              redirect_uri: window.location.origin + "/dashboard",
+            }),
+          });
+
+          let tokenData;
+          if (!tokenRes.ok) {
+            const tokenResFallback = await fetch("/api/auth/roblox/token", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                client_id: "1434336652378086576",
+                grant_type: "authorization_code",
+                code: code,
+                code_verifier: codeVerifier,
+                redirect_uri: "https://apex-rblx.vercel.app/dashboard",
+              }),
+            });
+            if (!tokenResFallback.ok) {
+              const err = await tokenResFallback.json().catch(() => ({}));
+              throw new Error(err.error_description || err.error || "Token exchange failed.");
+            }
+            tokenData = await tokenResFallback.json();
+          } else {
+            tokenData = await tokenRes.json();
+          }
+
+          await handleTokenResponse(tokenData);
+          
+          setTimeout(() => {
+            setIsExchanging(false);
+            navigate("/dashboard", { replace: true });
+          }, 800);
+
+        } catch (e: any) {
+          console.error("Auth flow failed:", e);
+          setAuthError(e.message || "Connection failed.");
+          setIsExchanging(false);
         }
       };
 
@@ -140,17 +145,46 @@ export default function App() {
     }
   }, [location.search, navigate]);
 
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex flex-col items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full bg-white/5 border border-white/10 p-10 rounded-[2.5rem] text-center backdrop-blur-xl shadow-2xl">
+          <div className="w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+            <X className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">Connection Error</h2>
+          <p className="text-white/50 text-sm mb-10 leading-relaxed font-medium">{authError}</p>
+          <button 
+            onClick={() => {
+              localStorage.removeItem("apex_code_verifier");
+              setAuthError(null);
+              navigate("/sign-in");
+            }}
+            className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl hover:bg-emerald-400 transition-all duration-300"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isExchanging) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white font-sans">
-        <div className="flex flex-col items-center gap-4">
-          <span className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></span>
-          <p className="text-sm text-white/50 uppercase tracking-widest font-bold">
-            Synchronizing with Roblox...
-          </p>
-          <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] animate-pulse">
-            Fetching profile & avatar
-          </p>
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full animate-pulse"></div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-white font-black uppercase tracking-[0.3em]">
+              Synchronizing Profile
+            </p>
+            <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] animate-pulse">
+              Fetching Roblox Identity
+            </p>
+          </div>
         </div>
       </div>
     );

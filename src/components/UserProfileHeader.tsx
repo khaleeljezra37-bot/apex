@@ -1,11 +1,13 @@
 import React from "react";
+import { LogOut } from "lucide-react";
 
 interface UserProfileHeaderProps {
   username: string;
   avatar: string;
+  onLogOut?: () => void;
 }
 
-export function UserProfileHeader({ username, avatar }: UserProfileHeaderProps) {
+export function UserProfileHeader({ username, avatar, onLogOut }: UserProfileHeaderProps) {
   if (!username) return null;
 
   return (
@@ -30,6 +32,15 @@ export function UserProfileHeader({ username, avatar }: UserProfileHeaderProps) 
           {username}
         </span>
       </div>
+      {onLogOut && (
+        <button 
+          onClick={onLogOut}
+          className="ml-2 p-1.5 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors flex items-center justify-center border border-white/5"
+          title="Sign Out"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 }

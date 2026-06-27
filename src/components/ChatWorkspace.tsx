@@ -112,6 +112,14 @@ export default function ChatWorkspace() {
     }
   }, []);
 
+  const handleLogOut = () => {
+    localStorage.removeItem("apex_username");
+    localStorage.removeItem("apex_avatar");
+    localStorage.removeItem("apex_roblox_id");
+    localStorage.removeItem("apex_code_verifier");
+    window.location.reload();
+  };
+
   return (
     <div className="flex bg-black min-h-screen text-white font-sans overflow-hidden">
       {/* Sidebar */}
@@ -261,11 +269,11 @@ export default function ChatWorkspace() {
 
             <div className="relative">
               {username ? (
-                <UserProfileHeader username={username} avatar={userAvatar} />
+                <UserProfileHeader username={username} avatar={userAvatar} onLogOut={handleLogOut} />
               ) : (
                 <button 
                   onClick={() => navigate("/sign-in")}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-colors"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-colors shadow-lg shadow-white/5"
                 >
                   Sign In
                 </button>
