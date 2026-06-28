@@ -84,6 +84,11 @@ export default function AdminPage() {
         body: JSON.stringify({ password: password.trim() }),
       });
 
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Server returned non-JSON error (Status: ${res.status})`);
+      }
+
       const data = await res.json();
 
       if (res.ok) {
@@ -119,6 +124,11 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code2fa }),
       });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Server returned non-JSON error (Status: ${res.status})`);
+      }
 
       const data = await res.json();
 

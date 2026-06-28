@@ -1,5 +1,7 @@
 import express from "express";
 import path from "path";
+import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 let serverLogs: string[] = [];
 const addLog = (msg: string) => {
@@ -442,7 +444,6 @@ app.post("/api/generate", async (req, res) => {
     }
 
     if (aiModel === "openai") {
-      const { default: OpenAI } = await import("openai");
       const apiKey = customOpenAiKey || process.env.OPENAI_API_KEY;
       if (!apiKey) {
         return res.status(400).json({
@@ -465,7 +466,6 @@ app.post("/api/generate", async (req, res) => {
       generatedCode =
         completion.choices[0]?.message.content || "-- No code generated";
     } else {
-      const { GoogleGenAI } = await import("@google/genai");
       const apiKey = customGeminiKey || process.env.GEMINI_API_KEY;
       if (!apiKey) {
         return res.status(400).json({
