@@ -111,9 +111,40 @@ export default function AdminPage() {
     }
   };
 
-  const handle2faSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!code2fa.trim()) return;
+  const handleResend2FA = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/resend-2fa", {
+        method: "POST",
+      });
+      
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Server returned non-JSON error (Status: ${res.status})`);
+      }
+      
+      const data = await res.json();
+      if (res.ok) {
+        // Successfully re-triggered 2FA code generation
+        setError("2FA Code resent successfully.");
+      } else {
+        setError(data.error || "Failed to resend 2FA code.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to resend code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handle2faSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanCode = code2fa.replace(/\D/g, "");
+    if (cleanCode.length !== 6) {
+      setError("Please enter a valid 6-digit code.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -122,7 +153,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code2fa }),
+        body: JSON.stringify({ code: cleanCode }),
       });
 
       const contentType = res.headers.get("content-type");
@@ -332,7 +363,7 @@ export default function AdminPage() {
                 </div>
               )}
 
-              <form onSubmit={handle2faSubmit} className="space-y-6">
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 px-1">2FA Verification Code</label>
                   <input
@@ -340,6 +371,9 @@ export default function AdminPage() {
                     maxLength={6}
                     value={code2fa}
                     onChange={(e) => setCode2fa(e.target.value.replace(/\D/g, ""))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handle2faSubmit();
+                    }}
                     placeholder="0 0 0 0 0 0"
                     disabled={loading}
                     className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 text-center text-2xl font-black tracking-[0.5em] font-mono outline-none focus:border-emerald-500 focus:bg-white/[0.05] transition-all text-white"
@@ -349,26 +383,41 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep("login");
+                        setError(null);
+                        setCode2fa("");
+                      }}
+                      className="w-1/3 py-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all text-xs font-black uppercase tracking-widest"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handle2faSubmit()}
+                      disabled={loading}
+                      className={`w-2/3 py-4 rounded-2xl bg-emerald-500 text-black font-black uppercase tracking-[0.15em] text-xs hover:bg-emerald-400 transition-all active:scale-[0.98] ${
+                        code2fa.length !== 6 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {loading ? "Authenticating..." : "Establish Session"}
+                    </button>
+                  </div>
+                  
                   <button
                     type="button"
-                    onClick={() => {
-                      setStep("login");
-                      setError(null);
-                    }}
-                    className="w-1/3 py-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all text-xs font-black uppercase tracking-widest"
+                    onClick={handleResend2FA}
+                    disabled={loading || lockoutTimer !== null}
+                    className="w-full py-3 rounded-2xl border border-white/5 hover:bg-white/5 text-white/50 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest disabled:opacity-50"
                   >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || code2fa.length !== 6}
-                    className="w-2/3 py-4 rounded-2xl bg-emerald-500 text-black font-black uppercase tracking-[0.15em] text-xs hover:bg-emerald-400 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? "Authenticating..." : "Establish Session"}
+                    Resend 2FA Code
                   </button>
                 </div>
-              </form>
+              </div>
             </motion.div>
           )}
 

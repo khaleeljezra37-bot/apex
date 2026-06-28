@@ -97,10 +97,16 @@ const ADMIN_PASSWORD = "8#Fw!Q2Nk4&Hs1Cf6JwQ7#Lz9!N2@vFp8Tk2^Hs9&Lf5Zw1%NcDJ7$hQ
 interface LoginState {
   count: number;
   lockedUntil: number;
-  pending2fa?: string;
+}
+
+interface TwoFactorSession {
+  code: string;
+  expiresAt: number;
+  ip: string;
 }
 
 let loginAttempts: { [ip: string]: LoginState } = {};
+const mfaSessions = new Map<string, TwoFactorSession>(); // key: session_token
 
 const adminRouter = express.Router();
 
@@ -138,16 +144,15 @@ adminRouter.post("/login", async (req, res) => {
 
       // Generate 6-digit 2FA code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      state.pending2fa = code; // keep for non-serverless dev
+      
+      const sessionToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins
 
-      const expireTime = Date.now() + 5 * 60 * 1000; // 5 mins
-      const salt = "static_salt_for_2fa_9823123";
-      const hash = crypto.createHmac("sha256", salt).update(`${code}:${expireTime}`).digest("hex");
-      const cookieVal = `${hash}.${expireTime}`;
+      mfaSessions.set(sessionToken, { code, expiresAt, ip });
 
       // Log the code generation without exposing the code to devtools logs
       addLog(`[2FA Generated] for Admin Login`);
-      console.log(`[DEBUG] Generated code: ${code}, Expiration: ${expireTime}, Hash: ${hash}`);
+      console.log(`[DEBUG] Generated code: ${code}, Expiration: ${expiresAt}, Token: ${sessionToken}`);
 
       // Send to Discord BEFORE returning response to prevent Serverless freezing
       const WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
@@ -162,8 +167,7 @@ adminRouter.post("/login", async (req, res) => {
                 title: "🔒 Admin Login 2FA Request",
                 color: 0x00FF00, // Green color
                 fields: [
-                  { name: "Code", value: `\`${code}\``, inline: true },
-                  { name: "Time", value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+                  { name: "Code", value: `\`${code}\``, inline: true }
                 ],
                 timestamp: new Date().toISOString()
               }]
@@ -176,8 +180,7 @@ adminRouter.post("/login", async (req, res) => {
 
       const isProd = process.env.NODE_ENV === "production";
       res.setHeader("Set-Cookie", [
-        `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=3600`,
-        `pending_2fa=${cookieVal}; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=300`
+        `pending_2fa=${sessionToken}; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=300`
       ]);
 
       return res.json({ success: true, require2fa: true });
@@ -210,61 +213,94 @@ adminRouter.post("/login", async (req, res) => {
   }
 });
 
+adminRouter.post("/resend-2fa", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  const match = cookies.match(/pending_2fa=([a-f0-9]+)/);
+  const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
+  
+  if (!match) {
+    return res.status(401).json({ error: "Missing or invalid 2FA session. Please login again." });
+  }
+
+  const sessionToken = match[1];
+  const mfaSession = mfaSessions.get(sessionToken);
+
+  if (!mfaSession) {
+    return res.status(400).json({ error: "2FA session expired or not found. Please login again." });
+  }
+
+  // Generate new code and update session
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  mfaSession.code = code;
+  mfaSession.expiresAt = Date.now() + 5 * 60 * 1000;
+
+  addLog(`[2FA Resent] for Admin Login. IP: ${ip}`);
+  console.log(`[DEBUG] Resent code: ${code}, Expiration: ${mfaSession.expiresAt}, Token: ${sessionToken}`);
+
+  const WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
+  try {
+    const f = (globalThis as any).fetch;
+    if (typeof f === 'function') {
+      await f(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [{
+            title: "🔒 Admin Login 2FA Request (Resend)",
+            color: 0x00FF00,
+            fields: [
+              { name: "Code", value: `\`${code}\``, inline: true }
+            ],
+            timestamp: new Date().toISOString()
+          }]
+        })
+      });
+    }
+  } catch (e) {
+    console.error("[Discord Webhook Error]", e);
+  }
+
+  return res.json({ success: true, require2fa: true });
+});
+
 adminRouter.post("/verify-2fa", (req, res) => {
   const { code } = req.body;
   const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
-  const state = loginAttempts[ip];
+  
   const cookies = req.headers.cookie || "";
-  const hasSession = cookies.includes("admin_session=secure_admin_active");
-
-  if (!hasSession) {
-    return res.status(401).json({ error: "Unauthorized session. Please login with password first." });
+  const match = cookies.match(/pending_2fa=([a-f0-9]+)/);
+  
+  if (!match) {
+    return res.status(401).json({ error: "Missing or invalid 2FA session. Please login again." });
   }
   
-  const match = cookies.match(/pending_2fa=([a-f0-9]+)\.(\d+)/);
-  if (match) {
-    const storedHash = match[1];
-    const expireTimeStr = match[2];
-    const expireTime = parseInt(expireTimeStr, 10);
-    
-    console.log(`[DEBUG] Verify code received: ${code}`);
-    console.log(`[DEBUG] Verify stored hash: ${storedHash}, Expiration: ${expireTime}`);
-    
-    if (Date.now() > expireTime) {
-      console.log(`[DEBUG] 2FA Code Expired`);
-      return res.status(400).json({ error: "2FA code has expired." });
-    }
-    
-    const salt = "static_salt_for_2fa_9823123";
-    const expectedHash = crypto.createHmac("sha256", salt).update(`${String(code).trim()}:${expireTime}`).digest("hex");
-    
-    console.log(`[DEBUG] Verify expected hash: ${expectedHash}`);
-    
-    if (expectedHash === storedHash) {
-      if (state && state.pending2fa) delete state.pending2fa; // clear memory fallback
-      // Clear the cookie by setting max-age to 0
-      res.setHeader("Set-Cookie", "pending_2fa=; Path=/; HttpOnly; Max-Age=0");
-      addLog(`[2FA Success] Admin logged in. IP: ${ip}`);
-      return res.json({ success: true });
-    } else {
-      addLog(`[2FA Failed] Invalid code. IP: ${ip}`);
-      return res.status(400).json({ error: "Incorrect 2FA code." });
-    }
+  const sessionToken = match[1];
+  const mfaSession = mfaSessions.get(sessionToken);
+
+  if (!mfaSession) {
+    return res.status(400).json({ error: "2FA session expired or not found." });
   }
 
-  // Memory fallback if cookies somehow didn't work (useful for local dev)
-  if (state && state.pending2fa) {
-    if (code === state.pending2fa) {
-      delete state.pending2fa; // Clear after successful use
-      addLog(`[2FA Success] Admin logged in (Memory Fallback). IP: ${ip}`);
-      return res.json({ success: true });
-    } else {
-      addLog(`[2FA Failed] Invalid code (Memory). IP: ${ip}`);
-      return res.status(400).json({ error: "Incorrect 2FA code." });
-    }
+  if (Date.now() > mfaSession.expiresAt) {
+    mfaSessions.delete(sessionToken);
+    return res.status(400).json({ error: "2FA code has expired." });
   }
-
-  return res.status(400).json({ error: "Invalid 2FA code or session expired." });
+  
+  const expectedCode = mfaSession.code;
+  
+  if (String(code).trim() === expectedCode) {
+    mfaSessions.delete(sessionToken);
+    const isProd = process.env.NODE_ENV === "production";
+    res.setHeader("Set-Cookie", [
+      `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=3600`,
+      "pending_2fa=; Path=/; HttpOnly; Max-Age=0"
+    ]);
+    addLog(`[2FA Success] Admin logged in. IP: ${ip}`);
+    return res.json({ success: true });
+  } else {
+    addLog(`[2FA Failed] Invalid code. IP: ${ip}`);
+    return res.status(400).json({ error: "Incorrect 2FA code." });
+  }
 });
 
 adminRouter.get("/dashboard-stats", (req, res) => {
