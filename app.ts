@@ -10,34 +10,6 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Vercel serverless support: restore the original URL from headers if rewritten to /api/index
-app.use((req, res, next) => {
-  try {
-    const forwardedPath = req.headers["x-vercel-forwarded-path"] || 
-                          req.headers["x-original-url"] || 
-                          req.headers["x-now-original-url"];
-    
-    if (typeof forwardedPath === "string" && forwardedPath) {
-      let targetUrl = forwardedPath;
-      if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
-        try {
-          const parsedUrl = new URL(targetUrl);
-          targetUrl = parsedUrl.pathname + (parsedUrl.search || "");
-        } catch (e) {
-          // Fallback if URL parsing fails
-        }
-      }
-
-      if (req.url !== targetUrl) {
-        req.url = targetUrl;
-      }
-    }
-  } catch (err) {
-    console.error("[URL Middleware Error]", err);
-  }
-  next();
-});
-
 // Serve custom Apex favicon svg directly from the server
 app.get("/favicon.ico", (req, res) => {
   res.setHeader("Content-Type", "image/svg+xml");
@@ -55,7 +27,7 @@ app.get("/favicon.svg", (req, res) => {
 
 // API constraints check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", ip: req.ip, url: req.url });
 });
 
 // Admin auth states and rate-limiting
@@ -70,18 +42,18 @@ interface LoginState {
 
 let loginAttempts: { [ip: string]: LoginState } = {};
 
-app.post("/api/admin/login", async (req, res) => {
+const adminRouter = express.Router();
+
+adminRouter.post("/login", async (req, res) => {
   try {
     const { password } = req.body || {};
-    
+    const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
+
+    console.log(`[Admin Login Attempt] IP: ${ip}, Path: ${req.originalUrl}`);
+
     if (!password) {
       return res.status(400).json({ error: "Password is required" });
     }
-    
-    // Simple IP detection with trust proxy
-    const ip = req.ip || "unknown";
-
-    console.log(`[Admin Login] IP: ${ip}, Password Length: ${password.length}`);
 
     if (!loginAttempts[ip]) {
       loginAttempts[ip] = { count: 0, lockedUntil: 0 };
@@ -100,6 +72,7 @@ app.post("/api/admin/login", async (req, res) => {
     }
 
     if (password === ADMIN_PASSWORD) {
+      console.log(`[Admin Login Success] IP: ${ip}`);
       state.count = 0;
       state.lockedUntil = 0;
 
@@ -107,25 +80,25 @@ app.post("/api/admin/login", async (req, res) => {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       state.pending2fa = code;
 
-      // Send to Discord (non-blocking and isolated)
-      setTimeout(async () => {
-        try {
-          if (typeof fetch === 'function') {
-            const payload = {
-              content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
-            };
-            
+      // Log the code for debugging
+      console.log(`[2FA Generated] IP: ${ip}, Code: ${code}`);
+
+      // Attempt to send to Discord (isolated and non-blocking)
+      if (DISCORD_WEBHOOK_URL) {
+        (async () => {
+          try {
             await fetch(DISCORD_WEBHOOK_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+              body: JSON.stringify({
+                content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
+              })
             });
-            console.log(`[2FA] Discord notification sent for ${ip}`);
+          } catch (e) {
+            console.error("[Discord Webhook Error]", e);
           }
-        } catch (err) {
-          console.error("[2FA] Discord background task failed:", err);
-        }
-      }, 0);
+        })();
+      }
 
       res.setHeader(
         "Set-Cookie",
@@ -136,6 +109,7 @@ app.post("/api/admin/login", async (req, res) => {
 
       return res.json({ success: true, require2fa: true });
     } else {
+      console.log(`[Admin Login Failure] IP: ${ip}`);
       state.count += 1;
       let remainingAttempts = 5 - state.count;
 
@@ -154,7 +128,7 @@ app.post("/api/admin/login", async (req, res) => {
       });
     }
   } catch (error: any) {
-    console.error("[Login Error]", error);
+    console.error("[CRITICAL LOGIN ERROR]", error);
     return res.status(500).json({ 
       error: "Internal Server Error during login",
       details: error?.message || String(error)
@@ -162,9 +136,9 @@ app.post("/api/admin/login", async (req, res) => {
   }
 });
 
-app.post("/api/admin/verify-2fa", (req, res) => {
+adminRouter.post("/verify-2fa", (req, res) => {
   const { code } = req.body;
-  const ip = req.ip || "unknown";
+  const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
   const state = loginAttempts[ip];
   const cookies = req.headers.cookie || "";
   const hasSession = cookies.includes("admin_session=secure_admin_active");
@@ -182,7 +156,7 @@ app.post("/api/admin/verify-2fa", (req, res) => {
     }
   }
 
-  // Fallback for dev or if state was lost
+  // Fallback for dev
   if (process.env.NODE_ENV !== 'production' && /^\d{6}$/.test(code)) {
     return res.json({ success: true });
   }
@@ -190,12 +164,10 @@ app.post("/api/admin/verify-2fa", (req, res) => {
   return res.status(400).json({ error: "Invalid 2FA code or session expired." });
 });
 
-app.get("/api/admin/dashboard-stats", (req, res) => {
+adminRouter.get("/dashboard-stats", (req, res) => {
   const cookies = req.headers.cookie || "";
-  const hasSession = cookies.includes("admin_session=secure_admin_active");
-
-  if (!hasSession) {
-    return res.status(403).json({ error: "Access denied. Admin session cookie not found." });
+  if (!cookies.includes("admin_session=secure_admin_active")) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   return res.json({
@@ -206,7 +178,7 @@ app.get("/api/admin/dashboard-stats", (req, res) => {
       cpuLoad: "12%",
       ramUsage: "284MB",
       robloxIntegration: "Active",
-      geminiModel: "gemini-2.5-flash",
+      geminiModel: "gemini-1.5-flash",
       geminiStatus: "Online",
     },
     logs: [
@@ -219,13 +191,15 @@ app.get("/api/admin/dashboard-stats", (req, res) => {
   });
 });
 
-app.post("/api/admin/logout", (req, res) => {
+adminRouter.post("/logout", (req, res) => {
   res.setHeader(
     "Set-Cookie",
     "admin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"
   );
   return res.json({ success: true });
 });
+
+app.use(["/api/admin", "/admin"], adminRouter);
 
 app.get("/api/admin/debug-headers", (req, res) => {
   res.json({

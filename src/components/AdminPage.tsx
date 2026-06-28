@@ -90,15 +90,17 @@ export default function AdminPage() {
         setStep("2fa");
         setError(null);
       } else {
-        setError(data.error || "Login failed");
+        const errorMsg = data.error || data.details || "Login failed";
+        setError(errorMsg);
         if (data.locked) {
           setLockoutTimer(data.remaining || 60);
         } else if (data.remainingAttempts !== undefined) {
           setRemainingAttempts(data.remainingAttempts);
         }
       }
-    } catch (err) {
-      setError("Server connection failed. Please try again.");
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      setError(err?.message || "Server connection failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -126,8 +128,9 @@ export default function AdminPage() {
       } else {
         setError(data.error || "Invalid 2FA Verification");
       }
-    } catch (err) {
-      setError("Verification failed. Please try again.");
+    } catch (err: any) {
+      console.error("2FA Verification Error:", err);
+      setError(err?.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }

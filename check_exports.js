@@ -1,2 +1,2 @@
-import * as genai from "@google/genai";
-console.log("Exports:", Object.keys(genai));
+import * as openai from "openai";
+console.log("OpenAI exports:", Object.keys(openai));
