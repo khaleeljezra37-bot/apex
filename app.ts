@@ -78,19 +78,10 @@ app.post("/api/admin/login", async (req, res) => {
       return res.status(400).json({ error: "Password is required" });
     }
     
-    // Use x-forwarded-for for Vercel/proxies, fall back to req.ip
-    const ipHeader = req.headers["x-forwarded-for"];
-    const ip = (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader.split(",")[0] : undefined)) || 
-               req.ip || 
-               (req.socket ? (req.socket as any).remoteAddress : undefined) || 
-               "unknown";
+    // Simple IP detection with trust proxy
+    const ip = req.ip || "unknown";
 
-    console.log(`[Admin Login] Method: ${req.method}, URL: ${req.url}, IP: ${ip}`);
-    if (password && typeof password === 'string') {
-      console.log(`[Admin Login] Password received, length: ${password.length}`);
-    } else {
-      console.log(`[Admin Login] Password missing or invalid type: ${typeof password}`);
-    }
+    console.log(`[Admin Login] IP: ${ip}, Password Length: ${password.length}`);
 
     if (!loginAttempts[ip]) {
       loginAttempts[ip] = { count: 0, lockedUntil: 0 };
@@ -116,24 +107,25 @@ app.post("/api/admin/login", async (req, res) => {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       state.pending2fa = code;
 
-      // Send to Discord
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-        
-        await fetch(DISCORD_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        console.log(`[2FA] Code sent to Discord for IP: ${ip}`);
-      } catch (err) {
-        console.error("Failed to send 2FA code to Discord:", err);
-      }
+      // Send to Discord (non-blocking and isolated)
+      setTimeout(async () => {
+        try {
+          if (typeof fetch === 'function') {
+            const payload = {
+              content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
+            };
+            
+            await fetch(DISCORD_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            console.log(`[2FA] Discord notification sent for ${ip}`);
+          }
+        } catch (err) {
+          console.error("[2FA] Discord background task failed:", err);
+        }
+      }, 0);
 
       res.setHeader(
         "Set-Cookie",
@@ -161,22 +153,18 @@ app.post("/api/admin/login", async (req, res) => {
         remainingAttempts,
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Login Error]", error);
-    return res.status(500).json({ error: "Internal Server Error during login" });
+    return res.status(500).json({ 
+      error: "Internal Server Error during login",
+      details: error?.message || String(error)
+    });
   }
 });
 
 app.post("/api/admin/verify-2fa", (req, res) => {
   const { code } = req.body;
-  
-  // Use x-forwarded-for for Vercel/proxies, fall back to req.ip
-  const ipHeader = req.headers["x-forwarded-for"];
-  const ip = (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader.split(",")[0] : undefined)) || 
-             req.ip || 
-             (req.socket ? (req.socket as any).remoteAddress : undefined) || 
-             "unknown";
-
+  const ip = req.ip || "unknown";
   const state = loginAttempts[ip];
   const cookies = req.headers.cookie || "";
   const hasSession = cookies.includes("admin_session=secure_admin_active");
@@ -448,7 +436,7 @@ app.post("/api/generate", async (req, res) => {
       }
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-flash",
         contents: `You are an expert Roblox Luau game developer. Generate only valid Luau code for this request. Do not wrap with backticks or markdown:\n\n${prompt}`,
       });
       generatedCode = response.text || "-- No code generated";
