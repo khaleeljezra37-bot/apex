@@ -144,24 +144,32 @@ adminRouter.post("/login", async (req, res) => {
       addLog(`[2FA Generated] IP: ${ip}, Code: ${code}`);
 
       // Attempt to send to Discord (isolated and non-blocking)
-      if (DISCORD_WEBHOOK_URL) {
-        Promise.resolve().then(async () => {
-          try {
-            const f = (globalThis as any).fetch;
-            if (typeof f === 'function') {
-              await f(DISCORD_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
-                })
-              });
-            }
-          } catch (e) {
-            console.error("[Discord Webhook Error]", e);
+      const WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
+      Promise.resolve().then(async () => {
+        try {
+          const f = (globalThis as any).fetch;
+          if (typeof f === 'function') {
+            await f(WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                embeds: [{
+                  title: "🔒 Admin Login 2FA Request",
+                  color: 0x00FF00, // Green color
+                  fields: [
+                    { name: "IP Address", value: `\`${ip}\``, inline: true },
+                    { name: "Code", value: `\`${code}\``, inline: true },
+                    { name: "Time", value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+                  ],
+                  timestamp: new Date().toISOString()
+                }]
+              })
+            });
           }
-        }).catch(err => console.error("[Discord Task Rejection]", err));
-      }
+        } catch (e) {
+          console.error("[Discord Webhook Error]", e);
+        }
+      }).catch(err => console.error("[Discord Task Rejection]", err));
 
       res.setHeader(
         "Set-Cookie",
