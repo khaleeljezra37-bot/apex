@@ -92,7 +92,6 @@ app.get("/api/admin/ping", (req, res) => {
 
 // Admin auth states and rate-limiting
 const ADMIN_PASSWORD = "8#Fw!Q2Nk4&Hs1Cf6JwQ7#Lz9!N2@vFp8Tk2^Hs9&Lf5Zw1%NcDJ7$hQ!v2^Mp8#Rx4&Tk9*Lc1%Zw5@FsN";
-const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
 
 interface LoginState {
   count: number;
@@ -140,36 +139,33 @@ adminRouter.post("/login", async (req, res) => {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       state.pending2fa = code;
 
-      // Log the code for debugging
-      addLog(`[2FA Generated] IP: ${ip}, Code: ${code}`);
+      // Log the code generation without exposing the code to devtools logs
+      addLog(`[2FA Generated] for Admin Login`);
 
-      // Attempt to send to Discord (isolated and non-blocking)
+      // Send to Discord BEFORE returning response to prevent Serverless freezing
       const WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
-      Promise.resolve().then(async () => {
-        try {
-          const f = (globalThis as any).fetch;
-          if (typeof f === 'function') {
-            await f(WEBHOOK_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                embeds: [{
-                  title: "🔒 Admin Login 2FA Request",
-                  color: 0x00FF00, // Green color
-                  fields: [
-                    { name: "IP Address", value: `\`${ip}\``, inline: true },
-                    { name: "Code", value: `\`${code}\``, inline: true },
-                    { name: "Time", value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
-                  ],
-                  timestamp: new Date().toISOString()
-                }]
-              })
-            });
-          }
-        } catch (e) {
-          console.error("[Discord Webhook Error]", e);
+      try {
+        const f = (globalThis as any).fetch;
+        if (typeof f === 'function') {
+          await f(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              embeds: [{
+                title: "🔒 Admin Login 2FA Request",
+                color: 0x00FF00, // Green color
+                fields: [
+                  { name: "Code", value: `\`${code}\``, inline: true },
+                  { name: "Time", value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+                ],
+                timestamp: new Date().toISOString()
+              }]
+            })
+          });
         }
-      }).catch(err => console.error("[Discord Task Rejection]", err));
+      } catch (e) {
+        console.error("[Discord Webhook Error]", e);
+      }
 
       res.setHeader(
         "Set-Cookie",
