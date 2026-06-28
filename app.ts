@@ -3,12 +3,30 @@ import path from "path";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 
+let serverLogs: string[] = [];
+const addLog = (msg: string) => {
+  serverLogs.push(`${new Date().toISOString()} - ${msg}`);
+  if (serverLogs.length > 50) serverLogs.shift();
+};
+
 const app = express();
 app.set('trust proxy', true);
 const PORT = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Diagnostic middleware
+app.use((req, res, next) => {
+  if (req.url.startsWith("/api/admin") || req.url.startsWith("/api/debug")) {
+    addLog(`[Request] ${req.method} ${req.url} (IP: ${req.ip})`);
+  }
+  next();
+});
+
+app.get("/api/debug/logs", (req, res) => {
+  res.json({ logs: serverLogs });
+});
 
 // Serve custom Apex favicon svg directly from the server
 app.get("/favicon.ico", (req, res) => {
@@ -27,7 +45,11 @@ app.get("/favicon.svg", (req, res) => {
 
 // API constraints check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", ip: req.ip, url: req.url });
+  res.json({ status: "ok", ip: req.ip, url: req.url, node: process.version });
+});
+
+app.get("/api/admin/ping", (req, res) => {
+  res.json({ status: "pong", ip: req.ip, time: new Date().toISOString() });
 });
 
 // Admin auth states and rate-limiting
@@ -49,7 +71,7 @@ adminRouter.post("/login", async (req, res) => {
     const { password } = req.body || {};
     const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
 
-    console.log(`[Admin Login Attempt] IP: ${ip}, Path: ${req.originalUrl}`);
+    addLog(`[Admin Login Attempt] IP: ${ip}, URL: ${req.url}`);
 
     if (!password) {
       return res.status(400).json({ error: "Password is required" });
@@ -72,7 +94,7 @@ adminRouter.post("/login", async (req, res) => {
     }
 
     if (password === ADMIN_PASSWORD) {
-      console.log(`[Admin Login Success] IP: ${ip}`);
+      addLog(`[Admin Login Success] IP: ${ip}`);
       state.count = 0;
       state.lockedUntil = 0;
 
@@ -81,23 +103,26 @@ adminRouter.post("/login", async (req, res) => {
       state.pending2fa = code;
 
       // Log the code for debugging
-      console.log(`[2FA Generated] IP: ${ip}, Code: ${code}`);
+      addLog(`[2FA Generated] IP: ${ip}, Code: ${code}`);
 
       // Attempt to send to Discord (isolated and non-blocking)
       if (DISCORD_WEBHOOK_URL) {
-        (async () => {
+        Promise.resolve().then(async () => {
           try {
-            await fetch(DISCORD_WEBHOOK_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
-              })
-            });
+            const f = (globalThis as any).fetch;
+            if (typeof f === 'function') {
+              await f(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
+                })
+              });
+            }
           } catch (e) {
             console.error("[Discord Webhook Error]", e);
           }
-        })();
+        }).catch(err => console.error("[Discord Task Rejection]", err));
       }
 
       res.setHeader(
@@ -109,7 +134,7 @@ adminRouter.post("/login", async (req, res) => {
 
       return res.json({ success: true, require2fa: true });
     } else {
-      console.log(`[Admin Login Failure] IP: ${ip}`);
+      addLog(`[Admin Login Failure] IP: ${ip}`);
       state.count += 1;
       let remainingAttempts = 5 - state.count;
 
@@ -128,6 +153,7 @@ adminRouter.post("/login", async (req, res) => {
       });
     }
   } catch (error: any) {
+    addLog(`[CRITICAL LOGIN ERROR] ${error?.message || String(error)}`);
     console.error("[CRITICAL LOGIN ERROR]", error);
     return res.status(500).json({ 
       error: "Internal Server Error during login",
@@ -199,7 +225,8 @@ adminRouter.post("/logout", (req, res) => {
   return res.json({ success: true });
 });
 
-app.use(["/api/admin", "/admin"], adminRouter);
+app.use("/api/admin", adminRouter);
+app.use("/admin", adminRouter);
 
 app.get("/api/admin/debug-headers", (req, res) => {
   res.json({
