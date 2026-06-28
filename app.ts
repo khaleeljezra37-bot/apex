@@ -25,12 +25,10 @@ app.use((req, res, next) => {
           targetUrl = parsedUrl.pathname + (parsedUrl.search || "");
         } catch (e) {
           // Fallback if URL parsing fails
-          console.error("[URL Parse Error]", e);
         }
       }
 
       if (req.url !== targetUrl) {
-        console.log(`[Vercel URL Rewrite] ${req.url} -> ${targetUrl}`);
         req.url = targetUrl;
       }
     }
@@ -120,13 +118,18 @@ app.post("/api/admin/login", async (req, res) => {
 
       // Send to Discord
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        
         await fetch(DISCORD_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         console.log(`[2FA] Code sent to Discord for IP: ${ip}`);
       } catch (err) {
         console.error("Failed to send 2FA code to Discord:", err);
