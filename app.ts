@@ -8,6 +8,18 @@ const addLog = (msg: string) => {
 };
 
 const app = express();
+
+// Polyfill req.socket and req.connection for Vercel Serverless environments
+app.use((req, res, next) => {
+  if (!req.socket) {
+    (req as any).socket = { remoteAddress: req.headers['x-forwarded-for'] || '127.0.0.1' };
+  }
+  if (!req.connection) {
+    (req as any).connection = req.socket;
+  }
+  next();
+});
+
 app.set('trust proxy', true);
 const PORT = 3000;
 

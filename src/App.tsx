@@ -7,6 +7,8 @@ import AuthPage from "./components/AuthPage";
 import LegalPage from "./components/LegalPage";
 import AdminPage from "./components/AdminPage";
 
+import DiagnosticLogs from "./components/DiagnosticLogs";
+
 export default function App() {
   const [isExchanging, setIsExchanging] = useState(false);
   const [authKey, setAuthKey] = useState(0);
@@ -224,6 +226,7 @@ export default function App() {
       />
       <Route path="/dashboard" element={<ChatWorkspace key={authKey} />} />
       <Route path="/admin" element={<AdminPage />} />
+      <Route path="/debug/logs" element={<DiagnosticLogs />} />
       <Route path="/privacy-policy" element={<LegalPage page="privacy" />} />
       <Route path="/terms-of-service" element={<LegalPage page="terms" />} />
     </Routes>
