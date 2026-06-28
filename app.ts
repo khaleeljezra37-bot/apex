@@ -1,7 +1,5 @@
 import express from "express";
 import path from "path";
-import { GoogleGenAI } from "@google/genai";
-import OpenAI from "openai";
 
 let serverLogs: string[] = [];
 const addLog = (msg: string) => {
@@ -15,6 +13,32 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Restore URL from Vercel headers if rewritten
+app.use((req, res, next) => {
+  try {
+    const forwardedPath = req.headers["x-vercel-forwarded-path"] || 
+                          req.headers["x-original-url"] || 
+                          req.headers["x-now-original-url"];
+    
+    if (typeof forwardedPath === "string" && forwardedPath) {
+      let targetUrl = forwardedPath;
+      if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
+        try {
+          const parsedUrl = new URL(targetUrl);
+          targetUrl = parsedUrl.pathname + (parsedUrl.search || "");
+        } catch (e) { }
+      }
+
+      if (req.url !== targetUrl) {
+        req.url = targetUrl;
+      }
+    }
+  } catch (err) {
+    console.error("[URL Restore Error]", err);
+  }
+  next();
+});
 
 // Diagnostic middleware
 app.use((req, res, next) => {
@@ -406,6 +430,7 @@ app.post("/api/generate", async (req, res) => {
     }
 
     if (aiModel === "openai") {
+      const { default: OpenAI } = await import("openai");
       const apiKey = customOpenAiKey || process.env.OPENAI_API_KEY;
       if (!apiKey) {
         return res.status(400).json({
@@ -428,6 +453,7 @@ app.post("/api/generate", async (req, res) => {
       generatedCode =
         completion.choices[0]?.message.content || "-- No code generated";
     } else {
+      const { GoogleGenAI } = await import("@google/genai");
       const apiKey = customGeminiKey || process.env.GEMINI_API_KEY;
       if (!apiKey) {
         return res.status(400).json({
@@ -437,7 +463,7 @@ app.post("/api/generate", async (req, res) => {
       }
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
         contents: `You are an expert Roblox Luau game developer. Generate only valid Luau code for this request. Do not wrap with backticks or markdown:\n\n${prompt}`,
       });
       generatedCode = response.text || "-- No code generated";
