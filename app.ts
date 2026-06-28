@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = 3000;
 
 app.use(express.json());
@@ -11,32 +12,24 @@ app.use(express.urlencoded({ extended: true }));
 
 // Vercel serverless support: restore the original URL from headers if rewritten to /api/index
 app.use((req, res, next) => {
-  const originalPath = (
-    req.headers["x-vercel-forwarded-path"] ||
-    req.headers["x-original-url"] ||
-    req.headers["x-now-original-url"] ||
-    req.headers["x-forwarded-url"]
-  ) as string;
-
-  if (originalPath) {
+  const forwardedPath = req.headers["x-vercel-forwarded-path"] || 
+                        req.headers["x-original-url"] || 
+                        req.headers["x-now-original-url"];
+  
+  if (typeof forwardedPath === "string" && forwardedPath) {
     try {
-      let targetUrl = originalPath;
+      let targetUrl = forwardedPath;
       if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
         const parsedUrl = new URL(targetUrl);
-        targetUrl = parsedUrl.pathname + parsedUrl.search;
-      }
-
-      // Preserve query params if they were lost in rewrite
-      if (!targetUrl.includes("?") && req.url.includes("?")) {
-        targetUrl += req.url.substring(req.url.indexOf("?"));
+        targetUrl = parsedUrl.pathname + (parsedUrl.search || "");
       }
 
       if (req.url !== targetUrl) {
+        console.log(`[Vercel URL Rewrite] ${req.url} -> ${targetUrl}`);
         req.url = targetUrl;
-        console.log(`[URL REWRITE] Restored req.url to ${req.url}`);
       }
     } catch (e) {
-      console.error("[URL REWRITE ERROR]", e);
+      console.error("[Vercel URL Rewrite Error]", e);
     }
   }
   next();
@@ -67,56 +60,64 @@ const ADMIN_PASSWORD = "8#Fw!Q2$Xp7^Zm4&Lc9@Tr5*Hv1%KdRgB!5rQ@9Yx#2mLp7^Vz8$Nk4&
 let loginAttempts: { [ip: string]: { count: number; lockedUntil: number } } = {};
 
 app.post("/api/admin/login", (req, res) => {
-  const { password } = req.body;
-  // Use x-forwarded-for for Vercel/proxies, fall back to req.ip
-  const ipHeader = req.headers["x-forwarded-for"];
-  const ip = (Array.isArray(ipHeader) ? ipHeader[0] : ipHeader?.split(",")[0]) || req.ip || "unknown";
+  try {
+    const { password } = req.body;
+    
+    // Use x-forwarded-for for Vercel/proxies, fall back to req.ip
+    const ipHeader = req.headers["x-forwarded-for"];
+    const ip = (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader.split(",")[0] : undefined)) || req.ip || "unknown";
 
-  if (!loginAttempts[ip]) {
-    loginAttempts[ip] = { count: 0, lockedUntil: 0 };
-  }
+    console.log(`[Login Attempt] IP: ${ip}, Password Length: ${password?.length || 0}`);
 
-  const now = Date.now();
-  const state = loginAttempts[ip];
+    if (!loginAttempts[ip]) {
+      loginAttempts[ip] = { count: 0, lockedUntil: 0 };
+    }
 
-  if (state.lockedUntil > now) {
-    const remaining = Math.ceil((state.lockedUntil - now) / 1000);
-    return res.status(429).json({
-      error: `Too many failed attempts. Locked out. Try again in ${remaining} seconds.`,
-      locked: true,
-      remaining,
-    });
-  }
+    const now = Date.now();
+    const state = loginAttempts[ip];
 
-  if (password === ADMIN_PASSWORD) {
-    state.count = 0;
-    state.lockedUntil = 0;
-
-    res.setHeader(
-      "Set-Cookie",
-      `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${
-        process.env.NODE_ENV === "production" ? "; Secure" : ""
-      }; Max-Age=3600`
-    );
-
-    return res.json({ success: true, require2fa: true });
-  } else {
-    state.count += 1;
-    let remainingAttempts = 5 - state.count;
-
-    if (state.count >= 5) {
-      state.lockedUntil = now + 60000; // 1 minute lockout
+    if (state.lockedUntil > now) {
+      const remaining = Math.ceil((state.lockedUntil - now) / 1000);
       return res.status(429).json({
-        error: "Too many failed attempts. Account locked out for 60 seconds.",
+        error: `Too many failed attempts. Locked out. Try again in ${remaining} seconds.`,
         locked: true,
-        remaining: 60,
+        remaining,
       });
     }
 
-    return res.status(401).json({
-      error: "Incorrect admin password.",
-      remainingAttempts,
-    });
+    if (password === ADMIN_PASSWORD) {
+      state.count = 0;
+      state.lockedUntil = 0;
+
+      res.setHeader(
+        "Set-Cookie",
+        `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${
+          process.env.NODE_ENV === "production" ? "; Secure" : ""
+        }; Max-Age=3600`
+      );
+
+      return res.json({ success: true, require2fa: true });
+    } else {
+      state.count += 1;
+      let remainingAttempts = 5 - state.count;
+
+      if (state.count >= 5) {
+        state.lockedUntil = now + 60000; // 1 minute lockout
+        return res.status(429).json({
+          error: "Too many failed attempts. Account locked out for 60 seconds.",
+          locked: true,
+          remaining: 60,
+        });
+      }
+
+      return res.status(401).json({
+        error: "Incorrect admin password.",
+        remainingAttempts,
+      });
+    }
+  } catch (error) {
+    console.error("[Login Error]", error);
+    return res.status(500).json({ error: "Internal Server Error during login" });
   }
 });
 
@@ -421,6 +422,16 @@ app.get("/api/pull", (req, res) => {
   } else {
     res.json({ instances: [] });
   }
+});
+
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error("[GLOBAL ERROR HANDLER]", err);
+  res.status(500).json({ 
+    error: "Internal Server Error", 
+    message: err.message || "An unexpected error occurred",
+    stack: process.env.NODE_ENV === "production" ? undefined : err.stack
+  });
 });
 
 export default app;
