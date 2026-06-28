@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 
@@ -137,10 +138,16 @@ adminRouter.post("/login", async (req, res) => {
 
       // Generate 6-digit 2FA code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      state.pending2fa = code;
+      state.pending2fa = code; // keep for non-serverless dev
+
+      const expireTime = Date.now() + 5 * 60 * 1000; // 5 mins
+      const salt = "static_salt_for_2fa_9823123";
+      const hash = crypto.createHmac("sha256", salt).update(`${code}:${expireTime}`).digest("hex");
+      const cookieVal = `${hash}.${expireTime}`;
 
       // Log the code generation without exposing the code to devtools logs
       addLog(`[2FA Generated] for Admin Login`);
+      console.log(`[DEBUG] Generated code: ${code}, Expiration: ${expireTime}, Hash: ${hash}`);
 
       // Send to Discord BEFORE returning response to prevent Serverless freezing
       const WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
@@ -167,12 +174,11 @@ adminRouter.post("/login", async (req, res) => {
         console.error("[Discord Webhook Error]", e);
       }
 
-      res.setHeader(
-        "Set-Cookie",
-        `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${
-          process.env.NODE_ENV === "production" ? "; Secure" : ""
-        }; Max-Age=3600`
-      );
+      const isProd = process.env.NODE_ENV === "production";
+      res.setHeader("Set-Cookie", [
+        `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=3600`,
+        `pending_2fa=${cookieVal}; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=300`
+      ]);
 
       return res.json({ success: true, require2fa: true });
     } else {
@@ -214,19 +220,48 @@ adminRouter.post("/verify-2fa", (req, res) => {
   if (!hasSession) {
     return res.status(401).json({ error: "Unauthorized session. Please login with password first." });
   }
-
-  if (state && state.pending2fa) {
-    if (code === state.pending2fa) {
-      delete state.pending2fa; // Clear after successful use
+  
+  const match = cookies.match(/pending_2fa=([a-f0-9]+)\.(\d+)/);
+  if (match) {
+    const storedHash = match[1];
+    const expireTimeStr = match[2];
+    const expireTime = parseInt(expireTimeStr, 10);
+    
+    console.log(`[DEBUG] Verify code received: ${code}`);
+    console.log(`[DEBUG] Verify stored hash: ${storedHash}, Expiration: ${expireTime}`);
+    
+    if (Date.now() > expireTime) {
+      console.log(`[DEBUG] 2FA Code Expired`);
+      return res.status(400).json({ error: "2FA code has expired." });
+    }
+    
+    const salt = "static_salt_for_2fa_9823123";
+    const expectedHash = crypto.createHmac("sha256", salt).update(`${String(code).trim()}:${expireTime}`).digest("hex");
+    
+    console.log(`[DEBUG] Verify expected hash: ${expectedHash}`);
+    
+    if (expectedHash === storedHash) {
+      if (state && state.pending2fa) delete state.pending2fa; // clear memory fallback
+      // Clear the cookie by setting max-age to 0
+      res.setHeader("Set-Cookie", "pending_2fa=; Path=/; HttpOnly; Max-Age=0");
+      addLog(`[2FA Success] Admin logged in. IP: ${ip}`);
       return res.json({ success: true });
     } else {
+      addLog(`[2FA Failed] Invalid code. IP: ${ip}`);
       return res.status(400).json({ error: "Incorrect 2FA code." });
     }
   }
 
-  // Fallback for dev
-  if (process.env.NODE_ENV !== 'production' && /^\d{6}$/.test(code)) {
-    return res.json({ success: true });
+  // Memory fallback if cookies somehow didn't work (useful for local dev)
+  if (state && state.pending2fa) {
+    if (code === state.pending2fa) {
+      delete state.pending2fa; // Clear after successful use
+      addLog(`[2FA Success] Admin logged in (Memory Fallback). IP: ${ip}`);
+      return res.json({ success: true });
+    } else {
+      addLog(`[2FA Failed] Invalid code (Memory). IP: ${ip}`);
+      return res.status(400).json({ error: "Incorrect 2FA code." });
+    }
   }
 
   return res.status(400).json({ error: "Invalid 2FA code or session expired." });
