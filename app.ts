@@ -12,25 +12,30 @@ app.use(express.urlencoded({ extended: true }));
 
 // Vercel serverless support: restore the original URL from headers if rewritten to /api/index
 app.use((req, res, next) => {
-  const forwardedPath = req.headers["x-vercel-forwarded-path"] || 
-                        req.headers["x-original-url"] || 
-                        req.headers["x-now-original-url"];
-  
-  if (typeof forwardedPath === "string" && forwardedPath) {
-    try {
+  try {
+    const forwardedPath = req.headers["x-vercel-forwarded-path"] || 
+                          req.headers["x-original-url"] || 
+                          req.headers["x-now-original-url"];
+    
+    if (typeof forwardedPath === "string" && forwardedPath) {
       let targetUrl = forwardedPath;
       if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
-        const parsedUrl = new URL(targetUrl);
-        targetUrl = parsedUrl.pathname + (parsedUrl.search || "");
+        try {
+          const parsedUrl = new URL(targetUrl);
+          targetUrl = parsedUrl.pathname + (parsedUrl.search || "");
+        } catch (e) {
+          // Fallback if URL parsing fails
+          console.error("[URL Parse Error]", e);
+        }
       }
 
       if (req.url !== targetUrl) {
         console.log(`[Vercel URL Rewrite] ${req.url} -> ${targetUrl}`);
         req.url = targetUrl;
       }
-    } catch (e) {
-      console.error("[Vercel URL Rewrite Error]", e);
     }
+  } catch (err) {
+    console.error("[URL Middleware Error]", err);
   }
   next();
 });
@@ -56,18 +61,38 @@ app.get("/api/health", (req, res) => {
 });
 
 // Admin auth states and rate-limiting
-const ADMIN_PASSWORD = "8#Fw!Q2$Xp7^Zm4&Lc9@Tr5*Hv1%KdRgB!5rQ@9Yx#2mLp7^Vz8$Nk4&Hs1*Cf6JwQ7#Lz9!N2@vFp8$Rx1^Km6&Hu4*Ta3%R@8m!Vx3#Qp7$Tk2^Hs9&Lf5*Zw1%NcDJ7$hQ!v2^Mp8#Rx4&Tk9*Lc1%Zw5@FsN";
-let loginAttempts: { [ip: string]: { count: number; lockedUntil: number } } = {};
+const ADMIN_PASSWORD = "8#Fw!Q2Nk4&Hs1Cf6JwQ7#Lz9!N2@vFp8Tk2^Hs9&Lf5Zw1%NcDJ7$hQ!v2^Mp8#Rx4&Tk9*Lc1%Zw5@FsN";
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
 
-app.post("/api/admin/login", (req, res) => {
+interface LoginState {
+  count: number;
+  lockedUntil: number;
+  pending2fa?: string;
+}
+
+let loginAttempts: { [ip: string]: LoginState } = {};
+
+app.post("/api/admin/login", async (req, res) => {
   try {
-    const { password } = req.body;
+    const { password } = req.body || {};
+    
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
     
     // Use x-forwarded-for for Vercel/proxies, fall back to req.ip
     const ipHeader = req.headers["x-forwarded-for"];
-    const ip = (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader.split(",")[0] : undefined)) || req.ip || "unknown";
+    const ip = (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader.split(",")[0] : undefined)) || 
+               req.ip || 
+               (req.socket ? (req.socket as any).remoteAddress : undefined) || 
+               "unknown";
 
-    console.log(`[Login Attempt] IP: ${ip}, Password Length: ${password?.length || 0}`);
+    console.log(`[Admin Login] Method: ${req.method}, URL: ${req.url}, IP: ${ip}`);
+    if (password && typeof password === 'string') {
+      console.log(`[Admin Login] Password received, length: ${password.length}`);
+    } else {
+      console.log(`[Admin Login] Password missing or invalid type: ${typeof password}`);
+    }
 
     if (!loginAttempts[ip]) {
       loginAttempts[ip] = { count: 0, lockedUntil: 0 };
@@ -88,6 +113,24 @@ app.post("/api/admin/login", (req, res) => {
     if (password === ADMIN_PASSWORD) {
       state.count = 0;
       state.lockedUntil = 0;
+
+      // Generate 6-digit 2FA code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      state.pending2fa = code;
+
+      // Send to Discord
+      try {
+        await fetch(DISCORD_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: `🔒 **Admin Login 2FA Request**\nIP: \`${ip}\`\nCode: \`${code}\`\nTime: <t:${Math.floor(Date.now() / 1000)}:F>`
+          })
+        });
+        console.log(`[2FA] Code sent to Discord for IP: ${ip}`);
+      } catch (err) {
+        console.error("Failed to send 2FA code to Discord:", err);
+      }
 
       res.setHeader(
         "Set-Cookie",
@@ -123,6 +166,15 @@ app.post("/api/admin/login", (req, res) => {
 
 app.post("/api/admin/verify-2fa", (req, res) => {
   const { code } = req.body;
+  
+  // Use x-forwarded-for for Vercel/proxies, fall back to req.ip
+  const ipHeader = req.headers["x-forwarded-for"];
+  const ip = (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader.split(",")[0] : undefined)) || 
+             req.ip || 
+             (req.socket ? (req.socket as any).remoteAddress : undefined) || 
+             "unknown";
+
+  const state = loginAttempts[ip];
   const cookies = req.headers.cookie || "";
   const hasSession = cookies.includes("admin_session=secure_admin_active");
 
@@ -130,11 +182,21 @@ app.post("/api/admin/verify-2fa", (req, res) => {
     return res.status(401).json({ error: "Unauthorized session. Please login with password first." });
   }
 
-  if (/^\d{6}$/.test(code)) {
+  if (state && state.pending2fa) {
+    if (code === state.pending2fa) {
+      delete state.pending2fa; // Clear after successful use
+      return res.json({ success: true });
+    } else {
+      return res.status(400).json({ error: "Incorrect 2FA code." });
+    }
+  }
+
+  // Fallback for dev or if state was lost
+  if (process.env.NODE_ENV !== 'production' && /^\d{6}$/.test(code)) {
     return res.json({ success: true });
   }
 
-  return res.status(400).json({ error: "Invalid 2FA code. Must be exactly 6 digits." });
+  return res.status(400).json({ error: "Invalid 2FA code or session expired." });
 });
 
 app.get("/api/admin/dashboard-stats", (req, res) => {
