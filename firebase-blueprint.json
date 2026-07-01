@@ -1,0 +1,135 @@
+{
+  "collections": [
+    {
+      "name": "users",
+      "description": "Registered users of the platform",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" },
+          "displayName": { "type": "string" },
+          "robloxId": { "type": "string" },
+          "isPremium": { "type": "boolean" },
+          "premiumExpiry": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["active", "banned"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["email", "status", "createdAt"]
+      }
+    },
+    {
+      "name": "ai_requests",
+      "description": "History of AI prompt requests",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "prompt": { "type": "string" },
+          "tokens": { "type": "integer" },
+          "responseTime": { "type": "number" },
+          "model": { "type": "string" },
+          "status": { "type": "string", "enum": ["success", "error"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "prompt", "tokens", "responseTime", "status", "createdAt"]
+      }
+    },
+    {
+      "name": "plugins",
+      "description": "Available Roblox plugins",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "downloads": { "type": "integer" },
+          "updates": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["name", "version", "createdAt"]
+      }
+    },
+    {
+      "name": "plugin_sessions",
+      "description": "Active Roblox Studio sessions",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "pluginId": { "type": "string" },
+          "studioSessionId": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "closed"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "pluginId", "status", "createdAt"]
+      }
+    },
+    {
+      "name": "revenue",
+      "description": "Financial transactions",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["subscription", "ad"] },
+          "amount": { "type": "number" },
+          "userId": { "type": "string" },
+          "status": { "type": "string", "enum": ["completed", "pending"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["type", "amount", "status", "createdAt"]
+      }
+    },
+    {
+      "name": "security_logs",
+      "description": "Audit and security related events",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["login_fail", "suspicious", "audit"] },
+          "message": { "type": "string" },
+          "ip": { "type": "string" },
+          "userId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["type", "message", "createdAt"]
+      }
+    },
+    {
+      "name": "broadcasts",
+      "description": "Mass notifications and announcements",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "subject": { "type": "string" },
+          "message": { "type": "string" },
+          "channels": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["sent", "scheduled"] },
+          "scheduledFor": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["subject", "message", "status", "createdAt"]
+      }
+    },
+    {
+      "name": "settings",
+      "description": "Global application settings",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "siteName": { "type": "string" },
+          "maintenanceMode": { "type": "boolean" },
+          "pluginVersion": { "type": "string" },
+          "apiKeys": {
+            "type": "object",
+            "properties": {
+              "openai": { "type": "string" },
+              "gemini": { "type": "string" },
+              "discord": { "type": "string" }
+            }
+          },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  ]
+}

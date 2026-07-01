@@ -1,6 +1,6 @@
 {
-  "name": "Apex Builder",
-  "description": "AI-driven Roblox game builder with visual scripting, real-time previews, and smart asset generation.",
+  "name": "Apex AI Admin Panel",
+  "description": "Enterprise-level AI administration dashboard with real-time analytics, user management, and system configuration.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

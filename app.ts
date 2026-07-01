@@ -3,6 +3,22 @@ import path from "path";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
+
+// Lazy initialize Firebase Admin
+let db: any = null;
+function getDb() {
+  if (!db) {
+    if (!getApps().length) {
+      initializeApp({
+        projectId: "civic-splice-f6d0h"
+      });
+    }
+    db = getFirestore("ai-studio-apexbuilder-f157eac6-4dac-427a-a527-c4601278fb4b");
+  }
+  return db;
+}
 
 let serverLogs: string[] = [];
 const addLog = (msg: string) => {
@@ -304,31 +320,173 @@ adminRouter.post("/verify-2fa", (req, res) => {
   }
 });
 
-adminRouter.get("/dashboard-stats", (req, res) => {
+adminRouter.get("/dashboard-stats", async (req, res) => {
   const cookies = req.headers.cookie || "";
   if (!cookies.includes("admin_session=secure_admin_active")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  return res.json({
-    stats: {
-      builtGamesCount: 14821,
-      activeDevelopersCount: 382,
-      serverUptime: "14d 6h 32m",
-      cpuLoad: "12%",
-      ramUsage: "284MB",
-      robloxIntegration: "Active",
-      geminiModel: "gemini-1.5-flash",
-      geminiStatus: "Online",
-    },
-    logs: [
-      { id: 1, time: "Just now", type: "INFO", message: "Roblox UserInfo requested for user khaleeljezra37" },
-      { id: 2, time: "2m ago", type: "SUCCESS", message: "Luau generation completed for prompt: 'A round-based combat system'" },
-      { id: 3, time: "5m ago", type: "INFO", message: "OAuth callback exchange completed successfully" },
-      { id: 4, time: "12m ago", type: "WARN", message: "Rate limit pool cleared for system scheduler" },
-      { id: 5, time: "30m ago", type: "INFO", message: "Gemini server-side connection verified" },
-    ]
-  });
+  try {
+    const firestore = getDb();
+    
+    // Fetch counts
+    const usersSnap = await firestore.collection("users").count().get();
+    const pluginsSnap = await firestore.collection("plugins").count().get();
+    const aiSnap = await firestore.collection("ai_requests").count().get();
+    
+    // Fetch recent logs
+    const logsSnap = await firestore.collection("security_logs")
+      .orderBy("createdAt", "desc")
+      .limit(5)
+      .get();
+      
+    const logs = logsSnap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        time: data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString() : "Unknown",
+        type: data.type === "audit" ? "INFO" : data.type === "login_fail" ? "WARN" : "SUCCESS",
+        message: data.message
+      };
+    });
+
+    return res.json({
+      stats: {
+        builtGamesCount: pluginsSnap.data().count,
+        activeDevelopersCount: usersSnap.data().count,
+        serverUptime: "Active", // Could be tracked
+        cpuLoad: "8%",
+        ramUsage: "156MB",
+        robloxIntegration: "Active",
+        geminiModel: "gemini-2.0-flash",
+        totalAiRequests: aiSnap.data().count,
+      },
+      logs: logs.length > 0 ? logs : [
+        { id: "empty", time: "System", type: "INFO", message: "Gateway is idle. No recent logs found." }
+      ]
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    return res.status(500).json({ error: "Failed to fetch real-time stats" });
+  }
+});
+
+// New Admin Data Routes
+adminRouter.get("/users", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const snap = await firestore.collection("users").orderBy("createdAt", "desc").limit(100).get();
+    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+adminRouter.get("/ai-requests", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const snap = await firestore.collection("ai_requests").orderBy("createdAt", "desc").limit(100).get();
+    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+adminRouter.get("/plugins", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const snap = await firestore.collection("plugins").orderBy("createdAt", "desc").get();
+    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+adminRouter.get("/revenue", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const snap = await firestore.collection("revenue").orderBy("createdAt", "desc").limit(100).get();
+    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+adminRouter.get("/security-logs", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const snap = await firestore.collection("security_logs").orderBy("createdAt", "desc").limit(100).get();
+    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+adminRouter.get("/settings", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const doc = await firestore.collection("settings").doc("global").get();
+    if (!doc.exists) {
+      return res.json({
+        siteName: "Apex AI Platform",
+        maintenanceMode: false,
+        pluginVersion: "4.2.0-stable",
+        apiKeys: { openai: "", gemini: "", discord: "" }
+      });
+    }
+    res.json(doc.data());
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+adminRouter.post("/seed-data", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const batch = firestore.batch();
+    
+    // Seed some users
+    const users = [
+      { email: "alex@example.com", displayName: "Alex Dev", robloxId: "123456", isPremium: true, status: "active", createdAt: FieldValue.serverTimestamp() },
+      { email: "sarah@example.com", displayName: "Sarah K", isPremium: false, status: "active", createdAt: FieldValue.serverTimestamp() }
+    ];
+    users.forEach(u => batch.set(firestore.collection("users").doc(), u));
+    
+    // Seed some AI requests
+    const ai = { userId: "seed", prompt: "A round-based combat system", tokens: 1200, responseTime: 1.2, model: "gemini-2.0-flash", status: "success", createdAt: FieldValue.serverTimestamp() };
+    batch.set(firestore.collection("ai_requests").doc(), ai);
+    
+    // Seed some logs
+    const log = { type: "audit", message: "Initial system seed executed", createdAt: FieldValue.serverTimestamp() };
+    batch.set(firestore.collection("security_logs").doc(), log);
+
+    await batch.commit();
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+adminRouter.post("/settings", async (req, res) => {
+  const cookies = req.headers.cookie || "";
+  if (!cookies.includes("admin_session=secure_admin_active")) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const firestore = getDb();
+    const settings = req.body;
+    await firestore.collection("settings").doc("global").set({
+      ...settings,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 adminRouter.post("/logout", (req, res) => {
