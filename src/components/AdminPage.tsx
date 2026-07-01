@@ -18,6 +18,19 @@ import {
   Server
 } from "lucide-react";
 
+// Admin Dashboard Components
+import { Sidebar } from "./admin/Sidebar";
+import { TopNav } from "./admin/TopNav";
+import { Overview } from "./admin/Overview";
+import { UserManagement } from "./admin/UserManagement";
+import { SecurityCenter } from "./admin/SecurityCenter";
+import { LogsView } from "./admin/LogsView";
+import { Analytics } from "./admin/Analytics";
+import { RevenueView } from "./admin/RevenueView";
+import { BroadcastCenter } from "./admin/BroadcastCenter";
+import { Settings } from "./admin/Settings";
+import { DevTools } from "./admin/DevTools";
+
 interface AdminStats {
   builtGamesCount: number;
   activeDevelopersCount: number;
@@ -41,6 +54,7 @@ export default function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [code2fa, setCode2fa] = useState("");
   const [step, setStep] = useState<"login" | "2fa" | "dashboard">("login");
+  const [activeTab, setActiveTab] = useState("dashboard");
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -430,184 +444,48 @@ export default function AdminPage() {
 
           {/* Step 3: Admin Operations Dashboard */}
           {step === "dashboard" && (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.99 }}
-              className="w-full space-y-8"
-            >
+            <div className="fixed inset-0 min-h-screen bg-[#070708] text-white flex font-sans selection:bg-[#00E599]/30 z-[100]">
+              <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
               
-              {/* Top Panel Banner */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0d0e12] border border-white/10 p-6 rounded-3xl backdrop-blur-xl">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <h2 className="text-xl font-extrabold uppercase tracking-tight">Active Administration Console</h2>
-                  </div>
-                  <p className="text-xs text-white/50 font-medium">
-                    Secure session established. Operational access logs and security configurations are active.
-                  </p>
-                </div>
-                <button
-                  onClick={fetchDashboardStats}
-                  disabled={refreshingStats}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold hover:bg-white/10 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${refreshingStats ? 'animate-spin' : ''}`} />
-                  Refresh Matrix
-                </button>
-              </div>
-
-              {/* Grid 2 Column: Security Standards & Operational Stats */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <TopNav onLogout={handleLogout} />
                 
-                {/* Left: Security Checklist and Architecture */}
-                <div className="bg-[#0d0e12] border border-white/10 rounded-3xl p-8 flex flex-col space-y-6">
-                  <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                    <div>
-                      <h3 className="text-md font-extrabold uppercase tracking-wide">Applied Security Standards</h3>
-                      <p className="text-[10px] text-white/40 font-mono">Active Gateway Configuration</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    
-                    {/* Item 1 */}
-                    <div className="p-4 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 text-emerald-400">
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase text-white tracking-wide">🔑 Two-factor authentication (2FA)</h4>
-                        <p className="text-[11px] text-white/50 leading-relaxed font-medium">
-                          Multi-factor verification checks are active for all portal access requests.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Item 2 */}
-                    <div className="p-4 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 text-emerald-400">
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase text-white tracking-wide">👤 Server-side Identity Checks</h4>
-                        <p className="text-[11px] text-white/50 leading-relaxed font-medium">
-                          Strict validation logic processes sessions exclusively on the server backend, completely shielding sensitive keys from devtools.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Item 3 */}
-                    <div className="p-4 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 text-emerald-400">
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase text-white tracking-wide">🍪 Secure, HTTP-only session cookies after login</h4>
-                        <p className="text-[11px] text-white/50 leading-relaxed font-medium">
-                          Cookie token handles session status. Protected with HttpOnly, Strict SameSite, and Secure flags to prevent XSS sniffing.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Item 4 */}
-                    <div className="p-4 bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 text-emerald-400">
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-xs font-black uppercase text-white tracking-wide">⏱️ Rate limiting and account lockout</h4>
-                        <p className="text-[11px] text-white/50 leading-relaxed font-medium">
-                          Smart connection trackers lockout brute force vectors automatically after 5 consecutive password mismatches.
-                        </p>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Right: Operational Metrics and Stats */}
-                <div className="bg-[#0d0e12] border border-white/10 rounded-3xl p-8 flex flex-col justify-between space-y-6">
-                  <div>
-                    <div className="flex items-center gap-3 pb-4 border-b border-white/5 mb-6">
-                      <Activity className="w-6 h-6 text-emerald-400" />
-                      <div>
-                        <h3 className="text-md font-extrabold uppercase tracking-wide">Engine System Metrics</h3>
-                        <p className="text-[10px] text-white/40 font-mono">Live Node Health Status</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Built Roblox Games</p>
-                        <p className="text-2xl font-black text-white mt-1 font-mono">{stats?.builtGamesCount || "14,821"}</p>
-                      </div>
-                      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Active Developers</p>
-                        <p className="text-2xl font-black text-white mt-1 font-mono">{stats?.activeDevelopersCount || "382"}</p>
-                      </div>
-                      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Uptime Duration</p>
-                        <p className="text-lg font-black text-white mt-2 font-mono">{stats?.serverUptime || "14d 6h 32m"}</p>
-                      </div>
-                      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">CPU & RAM Load</p>
-                        <p className="text-lg font-black text-white mt-2 font-mono">{stats?.cpuLoad || "12%"} / {stats?.ramUsage || "284MB"}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-white/5 space-y-3">
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-white/40">Model Engine:</span>
-                      <span className="text-emerald-400 font-bold">{stats?.geminiModel || "gemini-2.5-flash"}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-white/40">Roblox API Bridge:</span>
-                      <span className="text-emerald-400 font-bold">{stats?.robloxIntegration || "Active"}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-white/40">OpenAI Fallback:</span>
-                      <span className="text-white/60">Configured (Client setting)</span>
-                    </div>
-                  </div>
-                </div>
-
+                <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeTab}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="h-full"
+                    >
+                      {activeTab === "dashboard" && <Overview />}
+                      {activeTab === "users" && <UserManagement />}
+                      {activeTab === "security" && <SecurityCenter />}
+                      {activeTab === "logs" && <LogsView />}
+                      {activeTab === "analytics" && <Analytics />}
+                      {activeTab === "revenue" && <RevenueView />}
+                      {activeTab === "broadcast" && <BroadcastCenter />}
+                      {activeTab === "settings" && <Settings />}
+                      {activeTab === "developer" && <DevTools />}
+                      
+                      {/* Fallback for unimplmented or missing tabs */}
+                      {!["dashboard", "users", "security", "logs", "analytics", "revenue", "broadcast", "settings", "developer", "ai", "plugin"].includes(activeTab) && (
+                         <div className="flex flex-col items-center justify-center h-full text-white/20">
+                           <Cpu className="w-16 h-16 mb-4 opacity-50" />
+                           <h2 className="text-xl font-black uppercase tracking-widest">Section Under Construction</h2>
+                           <p className="text-xs font-bold uppercase tracking-widest mt-2">Check back later for system updates</p>
+                         </div>
+                      )}
+                      {(activeTab === "ai" || activeTab === "plugin") && (
+                         <Analytics /> /* Reuse analytics for these since they overlap */
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </main>
               </div>
-
-              {/* Console Logs */}
-              <div className="bg-[#0d0e12] border border-white/10 rounded-3xl p-8">
-                <div className="flex items-center gap-3 pb-4 border-b border-white/5 mb-6">
-                  <Terminal className="w-5 h-5 text-emerald-400" />
-                  <div>
-                    <h3 className="text-md font-extrabold uppercase tracking-wide">Live Gateway Access Logs</h3>
-                    <p className="text-[10px] text-white/40 font-mono">Roblox Authentication & Code Compiler Logs</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#050507] rounded-2xl p-5 border border-white/5 font-mono text-xs space-y-3 max-h-[220px] overflow-y-auto">
-                  {logs.map((log) => (
-                    <div key={log.id} className="flex items-start gap-4 leading-relaxed hover:bg-white/[0.02] p-1.5 rounded-lg transition-colors">
-                      <span className="text-white/30 shrink-0 select-none">[{log.time}]</span>
-                      <span className={`font-bold shrink-0 ${
-                        log.type === "SUCCESS" ? "text-emerald-400" : 
-                        log.type === "WARN" ? "text-amber-400" : "text-blue-400"
-                      }`}>{log.type}</span>
-                      <span className="text-white/80">{log.message}</span>
-                    </div>
-                  ))}
-                  <div className="flex items-start gap-4 leading-relaxed text-emerald-400/80 animate-pulse">
-                    <span className="text-emerald-400/30 shrink-0">[*SECURE*]</span>
-                    <span className="font-bold shrink-0">ACTIVE</span>
-                    <span>Admin HTTP-only session cookie verified successfully. Rate limiter pool idle.</span>
-                  </div>
-                </div>
-              </div>
-
-            </motion.div>
+            </div>
           )}
 
         </AnimatePresence>
