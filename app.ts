@@ -119,10 +119,11 @@ interface TwoFactorSession {
   code: string;
   expiresAt: number;
   ip: string;
+  lastResendAt?: number;
 }
 
 let loginAttempts: { [ip: string]: LoginState } = {};
-const mfaSessions = new Map<string, TwoFactorSession>(); // key: session_token
+// mfaSessions moved to Firestore for persistence
 
 const adminRouter = express.Router();
 
@@ -162,11 +163,19 @@ adminRouter.post("/login", async (req, res) => {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       
       const sessionToken = crypto.randomBytes(32).toString("hex");
-      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins
+      const now_ms = Date.now();
+      const expiresAt = now_ms + 10 * 60 * 1000; // Increased to 10 mins for better UX
 
-      mfaSessions.set(sessionToken, { code, expiresAt, ip });
+      // Store in Firestore for persistence
+      const firestore = getDb();
+      await firestore.collection("mfa_sessions").doc(sessionToken).set({
+        code,
+        expiresAt,
+        ip,
+        lastResendAt: now_ms,
+        createdAt: FieldValue.serverTimestamp()
+      });
 
-      // Log the code generation without exposing the code to devtools logs
       addLog(`[2FA Generated] for Admin Login`);
       console.log(`[DEBUG] Generated code: ${code}, Expiration: ${expiresAt}, Token: ${sessionToken}`);
 
@@ -235,23 +244,37 @@ adminRouter.post("/resend-2fa", async (req, res) => {
   const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
   
   if (!match) {
-    return res.status(401).json({ error: "Missing or invalid 2FA session. Please login again." });
+    return res.status(401).json({ error: "Missing session. Please login again." });
   }
 
   const sessionToken = match[1];
-  const mfaSession = mfaSessions.get(sessionToken);
+  const firestore = getDb();
+  const sessionDoc = await firestore.collection("mfa_sessions").doc(sessionToken).get();
 
-  if (!mfaSession) {
-    return res.status(400).json({ error: "2FA session expired or not found. Please login again." });
+  if (!sessionDoc.exists) {
+    return res.status(400).json({ error: "2FA session expired. Please login again." });
+  }
+
+  const data = sessionDoc.data() as TwoFactorSession;
+  const now = Date.now();
+
+  // Cooldown check (60 seconds)
+  const lastResend = data.lastResendAt || 0;
+  if (now - lastResend < 60000) {
+    const remaining = Math.ceil((60000 - (now - lastResend)) / 1000);
+    return res.status(429).json({ error: `Please wait ${remaining}s before resending.`, cooldown: remaining });
   }
 
   // Generate new code and update session
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  mfaSession.code = code;
-  mfaSession.expiresAt = Date.now() + 5 * 60 * 1000;
+  await firestore.collection("mfa_sessions").doc(sessionToken).update({
+    code,
+    expiresAt: now + 5 * 60 * 1000, // Reset expiration to 5 mins from now
+    lastResendAt: now
+  });
 
   addLog(`[2FA Resent] for Admin Login. IP: ${ip}`);
-  console.log(`[DEBUG] Resent code: ${code}, Expiration: ${mfaSession.expiresAt}, Token: ${sessionToken}`);
+  console.log(`[DEBUG] Resent code: ${code}, Expiration: ${now + 5 * 60 * 1000}, Token: ${sessionToken}`);
 
   const WEBHOOK_URL = "https://discord.com/api/webhooks/1520656044458774671/fLi083WAEZc0nMgGoHmXupfPy08cHzu5gR6gG5PAk_PIusXN9OxJpM5_LlH6b4nlSmrT";
   try {
@@ -279,39 +302,41 @@ adminRouter.post("/resend-2fa", async (req, res) => {
   return res.json({ success: true, require2fa: true });
 });
 
-adminRouter.post("/verify-2fa", (req, res) => {
-  const { codeHash } = req.body;
+adminRouter.post("/verify-2fa", async (req, res) => {
+  const { code: inputCode } = req.body;
   const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
   
   const cookies = req.headers.cookie || "";
   const match = cookies.match(/pending_2fa=([a-f0-9]+)/);
   
   if (!match) {
-    return res.status(401).json({ error: "Missing or invalid 2FA session. Please login again." });
+    return res.status(401).json({ error: "Session expired. Please login again." });
   }
   
   const sessionToken = match[1];
-  const mfaSession = mfaSessions.get(sessionToken);
+  const firestore = getDb();
+  const sessionDoc = await firestore.collection("mfa_sessions").doc(sessionToken).get();
 
-  if (!mfaSession) {
-    return res.status(400).json({ error: "2FA session expired or not found." });
+  if (!sessionDoc.exists) {
+    return res.status(400).json({ error: "2FA session not found. Please login again." });
   }
 
-  if (Date.now() > mfaSession.expiresAt) {
-    mfaSessions.delete(sessionToken);
-    return res.status(400).json({ error: "2FA code has expired." });
+  const data = sessionDoc.data() as TwoFactorSession;
+
+  if (Date.now() > data.expiresAt) {
+    return res.status(400).json({ error: "Verification code expired. Please resend." });
   }
-  
-  const expectedCode = mfaSession.code;
-  const expectedHash = crypto.createHash('sha256').update(expectedCode).digest('hex');
-  
-  if (codeHash === expectedHash) {
-    mfaSessions.delete(sessionToken);
+
+  if (data.code === inputCode) {
     const isProd = process.env.NODE_ENV === "production";
     res.setHeader("Set-Cookie", [
       `admin_session=secure_admin_active; Path=/; HttpOnly; SameSite=Strict${isProd ? "; Secure" : ""}; Max-Age=3600`,
       "pending_2fa=; Path=/; HttpOnly; Max-Age=0"
     ]);
+    
+    // Clean up session
+    await firestore.collection("mfa_sessions").doc(sessionToken).delete();
+    
     addLog(`[2FA Success] Admin logged in. IP: ${ip}`);
     return res.json({ success: true });
   } else {
