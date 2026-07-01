@@ -264,7 +264,7 @@ adminRouter.post("/resend-2fa", async (req, res) => {
 });
 
 adminRouter.post("/verify-2fa", (req, res) => {
-  const { code } = req.body;
+  const { codeHash } = req.body;
   const ip = (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || req.ip || "unknown";
   
   const cookies = req.headers.cookie || "";
@@ -287,8 +287,9 @@ adminRouter.post("/verify-2fa", (req, res) => {
   }
   
   const expectedCode = mfaSession.code;
+  const expectedHash = crypto.createHash('sha256').update(expectedCode).digest('hex');
   
-  if (String(code).trim() === expectedCode) {
+  if (codeHash === expectedHash) {
     mfaSessions.delete(sessionToken);
     const isProd = process.env.NODE_ENV === "production";
     res.setHeader("Set-Cookie", [

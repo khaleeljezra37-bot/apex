@@ -150,10 +150,17 @@ export default function AdminPage() {
     setError(null);
 
     try {
+      // Hash the code on the client side to prevent it from showing in devtools payload
+      const encoder = new TextEncoder();
+      const codeData = encoder.encode(cleanCode);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", codeData);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const codeHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
       const res = await fetch("/api/admin/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: cleanCode }),
+        body: JSON.stringify({ codeHash }),
       });
 
       const contentType = res.headers.get("content-type");
